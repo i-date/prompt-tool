@@ -1,5 +1,6 @@
 import { arrayMove } from "@dnd-kit/sortable";
 import { create } from "zustand";
+import { createEmptyDoc, createEmptySet } from "../lib/doc";
 import { drawPicks, reconcilePicks } from "../lib/random-syntax";
 import type {
   Field,
@@ -12,24 +13,7 @@ import type {
   PromptSet,
 } from "../types";
 
-export const DEFAULT_FORMAT: FormatOptions = {
-  separator: "newline",
-  blankAfterHeading: false,
-  blankAfterSection: false,
-};
-
-export const createEmptySet = (): PromptSet => ({
-  id: crypto.randomUUID(),
-  heading: { ja: "", en: "", output: true },
-  content: { ja: "", en: "", output: true },
-});
-
-export const createEmptyDoc = (): PromptDoc => ({
-  version: 1,
-  formatMode: "global",
-  format: { ...DEFAULT_FORMAT },
-  sets: [createEmptySet()],
-});
+export { createEmptyDoc, createEmptySet, DEFAULT_FORMAT } from "../lib/doc";
 
 /** 未保存判定用のスナップショット（id・抽選結果は比較しない。個別書式は順序を固定） */
 export const snapshotOf = (doc: PromptDoc): string =>
@@ -58,6 +42,8 @@ export type PromptState = {
   doc: PromptDoc;
   picks: Picks;
   savedSnapshot: string;
+  /** 最後に保存・取り込みしたファイルのパス（新規なら null） */
+  filePath: string | null;
   addSet: () => void;
   removeSet: (id: string) => void;
   moveSet: (activeId: string, overId: string) => void;
@@ -74,10 +60,10 @@ export type PromptState = {
   rerollAll: () => void;
   rerollSet: (id: string) => void;
   resetDoc: () => void;
-  /** M2：取り込み時に使用 */
-  loadDoc: (doc: PromptDoc) => void;
-  /** M2：MD保存に成功したときに使用 */
-  markSaved: () => void;
+  /** 取り込み：セットを復元し、抽選して最終プロンプトを表示できる状態にする */
+  loadDoc: (doc: PromptDoc, filePath: string) => void;
+  /** MD保存に成功したとき */
+  markSaved: (filePath: string) => void;
 };
 
 const initialDoc = createEmptyDoc();
@@ -86,6 +72,7 @@ export const usePromptStore = create<PromptState>()((set) => ({
   doc: initialDoc,
   picks: {},
   savedSnapshot: snapshotOf(initialDoc),
+  filePath: null,
 
   addSet: () => set((s) => ({ doc: { ...s.doc, sets: [...s.doc.sets, createEmptySet()] } })),
 
@@ -152,10 +139,11 @@ export const usePromptStore = create<PromptState>()((set) => ({
 
   resetDoc: () => {
     const doc = createEmptyDoc();
-    set({ doc, picks: {}, savedSnapshot: snapshotOf(doc) });
+    set({ doc, picks: {}, savedSnapshot: snapshotOf(doc), filePath: null });
   },
-  loadDoc: (doc) => set({ doc, picks: drawAll(doc.sets), savedSnapshot: snapshotOf(doc) }),
-  markSaved: () => set((s) => ({ savedSnapshot: snapshotOf(s.doc) })),
+  loadDoc: (doc, filePath) =>
+    set({ doc, picks: drawAll(doc.sets), savedSnapshot: snapshotOf(doc), filePath }),
+  markSaved: (filePath) => set((s) => ({ savedSnapshot: snapshotOf(s.doc), filePath })),
 }));
 
 export const selectIsDirty = (s: PromptState) => snapshotOf(s.doc) !== s.savedSnapshot;
