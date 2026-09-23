@@ -2,7 +2,7 @@ export type Lang = "ja" | "en";
 export type Part = "heading" | "content";
 export type Separator = "newline" | "comma";
 export type FormatMode = "global" | "perSet";
-export type TabKey = "prompt" | "phrases" | "settings";
+export type TabKey = "prompt" | "phrases" | "categories" | "settings";
 
 export type Field = { ja: string; en: string; output: boolean };
 
@@ -35,3 +35,24 @@ export type PromptDoc = {
 /** ランダム選択の抽選結果（保存しない） */
 export type SetPicks = { ja: number[]; en: number[] };
 export type Picks = Record<string, SetPicks>;
+
+/* ---------- フレーズ管理 ---------- */
+export type Category = { id: string; name: string; suggest: boolean };
+
+export type Phrase = {
+  id: string;
+  ja: string;
+  en: string;
+  /** カテゴリはフレーズごとに1つ（null＝未分類） */
+  categoryId: string | null;
+  /** タグは複数 */
+  tags: string[];
+  /** 候補の対象にするか */
+  suggest: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PhraseData = { version: 1; categories: Category[]; phrases: Phrase[] };
+
+export type PhraseInput = Pick<Phrase, "ja" | "en" | "categoryId" | "tags" | "suggest">;

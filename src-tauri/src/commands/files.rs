@@ -6,14 +6,14 @@ const UTF8_BOM: &[u8] = b"\xEF\xBB\xBF";
 const DEFAULT_DIR_NAME: &str = "PromptTool";
 
 /// UTF-8 として読み込む（BOM は除去、UTF-8 以外はエラー）
-fn read_utf8(path: &Path) -> Result<String, String> {
+pub(crate) fn read_utf8(path: &Path) -> Result<String, String> {
     let bytes = fs::read(path).map_err(|e| format!("ファイルを読み込めません: {e}"))?;
     let body = bytes.strip_prefix(UTF8_BOM).unwrap_or(&bytes[..]);
     String::from_utf8(body.to_vec()).map_err(|_| "UTF-8 として読み込めないファイルです".to_string())
 }
 
 /// 一時ファイルに書いてから置き換える（Windows の rename は既存ファイルを置き換える）
-fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
+pub(crate) fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
     let mut tmp = path.as_os_str().to_owned();
     tmp.push(".tmp");
     let tmp = PathBuf::from(tmp);
@@ -28,6 +28,16 @@ fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
 #[tauri::command]
 pub fn read_text_file(path: String) -> Result<String, String> {
     read_utf8(Path::new(&path))
+}
+
+/// 存在しなければ None（外部変更の検出用）
+#[tauri::command]
+pub fn read_text_file_opt(path: String) -> Result<Option<String>, String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Ok(None);
+    }
+    read_utf8(p).map(Some)
 }
 
 #[tauri::command]
@@ -95,6 +105,14 @@ mod tests {
         let p = d.join("a.md");
         fs::write(&p, [0x82u8, 0xA0]).unwrap(); // Shift_JIS の「あ」
         assert!(read_utf8(&p).is_err());
+        fs::remove_dir_all(&d).unwrap();
+    }
+
+    #[test]
+    fn missing_file_is_none() {
+        let d = temp_dir("missing");
+        let p = d.join("none.md").to_string_lossy().into_owned();
+        assert_eq!(read_text_file_opt(p).unwrap(), None);
         fs::remove_dir_all(&d).unwrap();
     }
 }

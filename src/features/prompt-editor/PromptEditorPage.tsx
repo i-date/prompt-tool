@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   closestCenter,
   DndContext,
@@ -13,14 +12,15 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { confirmDialog } from "../../lib/confirm";
+import { baseName } from "../../lib/files";
 import { selectIsDirty, usePromptStore } from "../../stores/promptStore";
 import type { FormatMode, Separator } from "../../types";
 import { importPrompt, savePrompt, savePromptAs } from "./fileActions";
 import { OutputPanel } from "./OutputPanel";
 import { SetRow } from "./SetRow";
-
-const baseName = (p: string) => p.split(/[\\/]/).pop() ?? p;
+import { useSaveShortcuts } from "./useSaveShortcuts";
 
 export function PromptEditorPage() {
   const doc = usePromptStore((s) => s.doc);
@@ -37,9 +37,17 @@ export function PromptEditorPage() {
     return () => clearTimeout(t);
   }, [notice]);
 
-  const runSave = async (fn: () => Promise<boolean>) => {
-    if (await fn()) setNotice("✓ 保存しました");
-  };
+  const savingRef = useRef(false);
+  const runSave = useCallback(async (fn: () => Promise<boolean>) => {
+    if (savingRef.current) return; // 連打・ショートカットによる二重保存を防ぐ
+    savingRef.current = true;
+    try {
+      if (await fn()) setNotice("✓ 保存しました");
+    } finally {
+      savingRef.current = false;
+    }
+  }, []);
+  useSaveShortcuts(runSave);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -64,15 +72,20 @@ export function PromptEditorPage() {
       <div className="toolbar">
         <button type="button" onClick={() => void handleNew()}>新規作成</button>
         <button type="button" onClick={() => void importPrompt()}>取り込み</button>
-        <button type="button" onClick={() => void runSave(savePromptAs)} title="名前を付けて新しいファイルに保存">
+        <button
+          type="button"
+          onClick={() => void runSave(savePromptAs)}
+          title="名前を付けて新しいファイルに保存（Ctrl+Shift+S）"
+        >
           MD新規保存
         </button>
         <button
           type="button"
+          disabled={!filePath}
           onClick={() => void runSave(savePrompt)}
-          title={filePath ? `上書き保存：${filePath}` : "保存先が未設定のため、新規保存になります"}
+          title={filePath ? `上書き保存（Ctrl+S）：${filePath}` : "保存先がありません。「MD新規保存」を使ってください"}
         >
-          MD保存
+          上書き保存
         </button>
         <span className="file-name" title={filePath ?? ""}>
           {filePath ? baseName(filePath) : "（新規）"}
