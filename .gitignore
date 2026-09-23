@@ -1,0 +1,38 @@
+# ===== Node / Vite =====
+node_modules/
+dist/
+dist-ssr/
+*.local
+coverage/
+
+# ===== Logs =====
+logs/
+*.log
+npm-debug.log*
+
+# ===== Rust / Tauri（src-tauri/.gitignore と二重で安全側に） =====
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# ===== 秘密情報（APIキー等）=====
+.env
+.env.*
+!.env.example
+
+# ===== ツールの個人データ（誤ってリポジトリ内に置いた場合の保険）=====
+# 本番データは %APPDATA% に保存する設計だが、開発中の出力先を除外
+/prompts/
+/data/
+phrases.json
+phrases.json.bak
+settings.json
+
+# ===== Editor / OS =====
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.swp
+Thumbs.db
+Desktop.ini
+.DS_Store
