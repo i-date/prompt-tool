@@ -50,7 +50,7 @@ button.danger { color: var(--danger); }
 .set-row__bar { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .set-row__no { font-weight: 600; color: var(--muted); }
 .drag-handle { padding: 4px 8px; cursor: grab; touch-action: none; }
-.field-row { display: grid; grid-template-columns: 90px 1fr 1fr; gap: 8px; align-items: start; margin-top: 6px; }
+.field-row { display: grid; grid-template-columns: 90px 1fr 1fr; gap: 8px; align-items: start; margin-top: 12px; }
 .field-row--head { padding: 0 13px; font-size: 12px; color: var(--muted); }
 .field-row__label { display: flex; align-items: center; gap: 6px; padding-top: 6px; }
 .add-set { width: 100%; margin-top: 10px; border-style: dashed; }
