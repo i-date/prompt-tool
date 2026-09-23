@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   closestCenter,
   DndContext,
@@ -15,15 +16,30 @@ import {
 import { confirmDialog } from "../../lib/confirm";
 import { selectIsDirty, usePromptStore } from "../../stores/promptStore";
 import type { FormatMode, Separator } from "../../types";
+import { importPrompt, savePrompt, savePromptAs } from "./fileActions";
 import { OutputPanel } from "./OutputPanel";
 import { SetRow } from "./SetRow";
+
+const baseName = (p: string) => p.split(/[\\/]/).pop() ?? p;
 
 export function PromptEditorPage() {
   const doc = usePromptStore((s) => s.doc);
   const picks = usePromptStore((s) => s.picks);
+  const filePath = usePromptStore((s) => s.filePath);
   const isDirty = usePromptStore(selectIsDirty);
   const { addSet, moveSet, setFormatMode, setGlobalFormat, rerollAll, resetDoc } =
     usePromptStore.getState(); // アクションは不変なので getState で取得
+
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 2000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  const runSave = async (fn: () => Promise<boolean>) => {
+    if (await fn()) setNotice("✓ 保存しました");
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -46,10 +62,26 @@ export function PromptEditorPage() {
   return (
     <div>
       <div className="toolbar">
-        <button type="button" onClick={handleNew}>新規作成</button>
-        <button type="button" disabled title="M2で実装予定">取り込み</button>
-        <button type="button" disabled title="M2で実装予定">MD保存</button>
-        {isDirty && <span className="dirty">● 未保存</span>}
+        <button type="button" onClick={() => void handleNew()}>新規作成</button>
+        <button type="button" onClick={() => void importPrompt()}>取り込み</button>
+        <button type="button" onClick={() => void runSave(savePromptAs)} title="名前を付けて新しいファイルに保存">
+          MD新規保存
+        </button>
+        <button
+          type="button"
+          onClick={() => void runSave(savePrompt)}
+          title={filePath ? `上書き保存：${filePath}` : "保存先が未設定のため、新規保存になります"}
+        >
+          MD保存
+        </button>
+        <span className="file-name" title={filePath ?? ""}>
+          {filePath ? baseName(filePath) : "（新規）"}
+        </span>
+        {notice ? (
+          <span className="notice">{notice}</span>
+        ) : (
+          isDirty && <span className="dirty">● 未保存</span>
+        )}
         <div className="spacer" />
         <button type="button" onClick={rerollAll} title="すべての [A / B] を再抽選">
           🎲 全体再抽選
