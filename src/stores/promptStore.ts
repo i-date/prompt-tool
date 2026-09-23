@@ -44,6 +44,8 @@ export type PromptState = {
   savedSnapshot: string;
   /** 最後に保存・取り込みしたファイルのパス（新規なら null） */
   filePath: string | null;
+  /** 最後に保存・取り込みした時点のファイル内容（外部変更の検出用） */
+  fileText: string | null;
   addSet: () => void;
   removeSet: (id: string) => void;
   moveSet: (activeId: string, overId: string) => void;
@@ -61,9 +63,9 @@ export type PromptState = {
   rerollSet: (id: string) => void;
   resetDoc: () => void;
   /** 取り込み：セットを復元し、抽選して最終プロンプトを表示できる状態にする */
-  loadDoc: (doc: PromptDoc, filePath: string) => void;
+  loadDoc: (doc: PromptDoc, filePath: string, fileText: string) => void;
   /** MD保存に成功したとき */
-  markSaved: (filePath: string) => void;
+  markSaved: (filePath: string, fileText: string) => void;
 };
 
 const initialDoc = createEmptyDoc();
@@ -73,6 +75,7 @@ export const usePromptStore = create<PromptState>()((set) => ({
   picks: {},
   savedSnapshot: snapshotOf(initialDoc),
   filePath: null,
+  fileText: null,
 
   addSet: () => set((s) => ({ doc: { ...s.doc, sets: [...s.doc.sets, createEmptySet()] } })),
 
@@ -139,11 +142,12 @@ export const usePromptStore = create<PromptState>()((set) => ({
 
   resetDoc: () => {
     const doc = createEmptyDoc();
-    set({ doc, picks: {}, savedSnapshot: snapshotOf(doc), filePath: null });
+    set({ doc, picks: {}, savedSnapshot: snapshotOf(doc), filePath: null, fileText: null });
   },
-  loadDoc: (doc, filePath) =>
-    set({ doc, picks: drawAll(doc.sets), savedSnapshot: snapshotOf(doc), filePath }),
-  markSaved: (filePath) => set((s) => ({ savedSnapshot: snapshotOf(s.doc), filePath })),
+  loadDoc: (doc, filePath, fileText) =>
+    set({ doc, picks: drawAll(doc.sets), savedSnapshot: snapshotOf(doc), filePath, fileText }),
+  markSaved: (filePath, fileText) =>
+    set((s) => ({ savedSnapshot: snapshotOf(s.doc), filePath, fileText })),
 }));
 
 export const selectIsDirty = (s: PromptState) => snapshotOf(s.doc) !== s.savedSnapshot;

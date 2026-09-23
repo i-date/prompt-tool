@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import { HeaderTabs } from "./app/HeaderTabs";
+import { CategoriesPage } from "./features/categories/CategoriesPage";
+import { PhrasesPage } from "./features/phrases/PhrasesPage";
 import { PromptEditorPage } from "./features/prompt-editor/PromptEditorPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { useCloseGuard } from "./hooks/useCloseGuard";
@@ -23,7 +25,8 @@ function App() {
       <HeaderTabs active={tab} onChange={setTab} />
       <main className="app__main">
         {tab === "prompt" && <PromptEditorPage />}
-        {tab === "phrases" && <p className="placeholder">フレーズ管理画面は M3 で実装予定です。</p>}
+        {tab === "phrases" && <PhrasesPage />}
+        {tab === "categories" && <CategoriesPage />}
         {tab === "settings" && <SettingsPage />}
       </main>
     </div>

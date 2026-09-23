@@ -3,6 +3,7 @@ import type { TabKey } from "../types";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "prompt", label: "プロンプト作成" },
   { key: "phrases", label: "フレーズ管理" },
+  { key: "categories", label: "カテゴリ管理" },
   { key: "settings", label: "設定" },
 ];
 

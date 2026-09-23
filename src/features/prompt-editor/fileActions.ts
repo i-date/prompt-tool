@@ -1,7 +1,13 @@
 import { dirname, join } from "@tauri-apps/api/path";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { confirmDialog, showError } from "../../lib/confirm";
-import { readTextFile, resolvePromptDir, writeTextFile } from "../../lib/files";
+import {
+  baseName,
+  readTextFile,
+  readTextFileOpt,
+  resolvePromptDir,
+  writeTextFile,
+} from "../../lib/files";
 import { parseDoc, serializeDoc } from "../../lib/markdown";
 import { selectIsDirty, usePromptStore } from "../../stores/promptStore";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -18,8 +24,31 @@ const settingsDir = () => resolvePromptDir(useSettingsStore.getState().promptDir
 
 /** 今のドキュメントを指定パスに書き込み、保存済みにする */
 async function writeDoc(path: string): Promise<void> {
-  await writeTextFile(path, serializeDoc(usePromptStore.getState().doc));
-  usePromptStore.getState().markSaved(path);
+  const text = serializeDoc(usePromptStore.getState().doc);
+  await writeTextFile(path, text);
+  usePromptStore.getState().markSaved(path, text);
+}
+
+/**
+ * 最後に取り込み・保存した後で外部から変更されていれば確認する。
+ * @returns 上書きしてよければ true
+ */
+async function confirmIfChanged(path: string, known: string | null): Promise<boolean> {
+  const name = baseName(path);
+  let current: string | null;
+  try {
+    current = await readTextFileOpt(path);
+  } catch {
+    return confirmDialog(
+      `「${name}」が他のアプリで変更され、読み込めない状態になっています。\n上書きしますか？`,
+    );
+  }
+  if (current === null || current === known) return true; // 消えていれば作り直す
+  return confirmDialog(
+    `「${name}」は、最後に取り込み・保存した後で他のアプリにより変更されています。\n` +
+      "上書きすると、その変更は失われます。上書きしますか？\n" +
+      "（キャンセルして「MD新規保存」で別名保存することもできます）",
+  );
 }
 
 /** 取り込み：未保存確認 → 保存先フォルダでファイル選択 → 復元・抽選 */
@@ -38,8 +67,8 @@ export async function importPrompt(): Promise<void> {
       filters: MD_FILTERS,
     });
     if (!path) return;
-    const doc = parseDoc(await readTextFile(path));
-    usePromptStore.getState().loadDoc(doc, path);
+    const text = await readTextFile(path);
+    usePromptStore.getState().loadDoc(parseDoc(text), path, text);
   } catch (e) {
     await showError("取り込みに失敗しました", e);
   }
@@ -48,14 +77,11 @@ export async function importPrompt(): Promise<void> {
 /**
  * MD新規保存：保存ダイアログでファイル名を決めて保存する。
  * 開くフォルダ：今のファイルのフォルダ（無ければ設定の保存先フォルダ）
- * @returns 保存したら true、キャンセル・失敗なら false
  */
 export async function savePromptAs(): Promise<boolean> {
   try {
     const { filePath } = usePromptStore.getState();
-    const dir = filePath
-      ? await resolvePromptDir(await dirname(filePath)) // フォルダが消えていれば既定へ
-      : await settingsDir();
+    const dir = filePath ? await resolvePromptDir(await dirname(filePath)) : await settingsDir();
     const picked = await save({
       title: "MD新規保存",
       defaultPath: await join(dir, defaultFileName()),
@@ -70,14 +96,12 @@ export async function savePromptAs(): Promise<boolean> {
   }
 }
 
-/**
- * MD保存：今のファイルに上書き保存する（保存先が無ければ新規保存）。
- * @returns 保存したら true、キャンセル・失敗なら false
- */
+/** MD保存：今のファイルに上書き保存する（保存先が無ければ新規保存＝Ctrl+S 用） */
 export async function savePrompt(): Promise<boolean> {
-  const { filePath } = usePromptStore.getState();
+  const { filePath, fileText } = usePromptStore.getState();
   if (!filePath) return savePromptAs();
   try {
+    if (!(await confirmIfChanged(filePath, fileText))) return false;
     await writeDoc(filePath);
     return true;
   } catch (e) {
