@@ -1,4 +1,5 @@
 mod commands;
+mod translator;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -15,6 +16,13 @@ pub fn run() {
             commands::app_data::save_phrases_file,
             commands::app_data::export_text_file,
             commands::app_data::import_text_file,
+            commands::translate::translate_texts,
+            commands::translate::api_key_status,
+            commands::translate::set_api_key,
+            commands::translate::delete_api_key,
+            commands::translate::deepl_usage,
+            commands::translate::google_test,
+            commands::translate::ollama_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -2,7 +2,10 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { confirmDialog } from "../../lib/confirm";
 import { usePromptStore } from "../../stores/promptStore";
+import { isTranslateTarget, useTranslateTargetStore } from "../../stores/translateTargetStore";
 import type { Field, FormatOptions, Lang, Part, PromptSet, Separator } from "../../types";
+import { BULK_KEY, setBusyKey, useTranslateBusy } from "../translate/translateActions";
+import { SetTranslateButtons } from "./SetTranslateButtons";
 
 type Props = {
   set: PromptSet;
@@ -23,8 +26,10 @@ const SEPS: readonly Choice<Separator>[] = [
 ];
 
 export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
+  const busyKey = useTranslateBusy((s) => s.key);
+  const locked = busyKey === BULK_KEY || busyKey === setBusyKey(set.id); // 翻訳中は読み取り専用
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: set.id });
+    useSortable({ id: set.id, disabled: locked });
   const removeSet = usePromptStore((s) => s.removeSet);
   const rerollSet = usePromptStore((s) => s.rerollSet);
   const setSetFormat = usePromptStore((s) => s.setSetFormat);
@@ -38,7 +43,8 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
     <section
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`set-row${isDragging ? " is-dragging" : ""}`}
+      className={`set-row${isDragging ? " is-dragging" : ""}${locked ? " is-locked" : ""}`}
+      aria-busy={locked}
     >
       <div className="set-row__bar">
         <button
@@ -46,19 +52,19 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
           ref={setActivatorNodeRef}
           className="drag-handle"
           aria-label="ドラッグで並べ替え"
+          disabled={locked}
           {...attributes}
           {...listeners}
         >
           ⋮⋮
         </button>
         <span className="set-row__no">#{index + 1}</span>
-        <button type="button" disabled title="M4で実装予定">日→英</button>
-        <button type="button" disabled title="M4で実装予定">英→日</button>
+        <SetTranslateButtons set={set} label={`#${index + 1}`} />
         <div className="spacer" />
         <button type="button" onClick={() => rerollSet(set.id)} title="このセットを再抽選">
           🎲
         </button>
-        <button type="button" className="danger" onClick={handleRemove}>
+        <button type="button" className="danger" onClick={handleRemove} disabled={locked}>
           削除
         </button>
       </div>
@@ -93,8 +99,8 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
         </div>
       )}
 
-      <FieldRow setId={set.id} part="heading" label="見出し" field={set.heading} />
-      <FieldRow setId={set.id} part="content" label="内容" field={set.content} multiline />
+      <FieldRow setId={set.id} part="heading" label="見出し" field={set.heading} locked={locked} />
+      <FieldRow setId={set.id} part="content" label="内容" field={set.content} locked={locked} multiline />
     </section>
   );
 }
@@ -131,15 +137,25 @@ function Override<T extends string | boolean>(props: {
   );
 }
 
-type FieldRowProps = { setId: string; part: Part; label: string; field: Field; multiline?: boolean };
+type FieldRowProps = {
+  setId: string;
+  part: Part;
+  label: string;
+  field: Field;
+  locked: boolean;
+  multiline?: boolean;
+};
 
-function FieldRow({ setId, part, label, field, multiline }: FieldRowProps) {
+function FieldRow({ setId, part, label, field, locked, multiline }: FieldRowProps) {
   const updateText = usePromptStore((s) => s.updateText);
   const toggleOutput = usePromptStore((s) => s.toggleOutput);
+  const translateOn = useTranslateTargetStore((s) => isTranslateTarget(s.off, setId, part));
+  const setTarget = useTranslateTargetStore((s) => s.setTarget);
 
   const box = (lang: Lang) => {
     const common = {
       value: field[lang],
+      readOnly: locked,
       placeholder: lang === "ja" ? `${label}（日本語）` : `${label} (English)`,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
         updateText(setId, part, lang, e.target.value),
@@ -148,11 +164,22 @@ function FieldRow({ setId, part, label, field, multiline }: FieldRowProps) {
   };
 
   return (
-    <div className="field-row">
-      <label className="field-row__label" title="最終プロンプトに出力する">
-        <input type="checkbox" checked={field.output} onChange={() => toggleOutput(setId, part)} />
-        {label}
-      </label>
+    <div className={`field-row${locked ? " is-locked" : ""}`}>
+      <div className="field-row__checks">
+        <label className="field-row__label" title="最終プロンプトに出力する">
+          <input type="checkbox" checked={field.output} onChange={() => toggleOutput(setId, part)} disabled={locked} />
+          {label}
+        </label>
+        <label className="field-row__sub" title="翻訳ボタン・一括翻訳の対象にする">
+          <input
+            type="checkbox"
+            checked={translateOn}
+            onChange={(e) => setTarget(setId, part, e.target.checked)}
+            disabled={locked}
+          />
+          翻訳
+        </label>
+      </div>
       {box("ja")}
       {box("en")}
     </div>

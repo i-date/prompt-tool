@@ -3,6 +3,7 @@ import { type KeyboardEvent, useState } from "react";
 import { SortableTr } from "../../components/SortableArea";
 import { type Category, type Phrase, isEffectiveCandidate } from "../../lib/phrases/types";
 import { usePhraseStore } from "../../stores/phraseStore";
+import { translateWithConfirm, useTranslateBusy } from "../translate/translateActions";
 import { CategorySelect } from "./CategorySelect";
 import { type PhraseDraft, fromDraft, toDraft } from "./draft";
 
@@ -15,9 +16,22 @@ export function PhraseRow({ phrase, categories, canDrag, editable }: {
   const updatePhrase = usePhraseStore((s) => s.updatePhrase);
   const deletePhrase = usePhraseStore((s) => s.deletePhrase);
   const hasDuplicate = usePhraseStore((s) => s.hasDuplicate);
+  const busyKey = useTranslateBusy((s) => s.key);
   const [draft, setDraft] = useState<PhraseDraft | null>(null);
   const category = categories.find((c) => c.id === phrase.categoryId);
   const active = isEffectiveCandidate(phrase, categories);
+  const myKey = `phrase:${phrase.id}`;
+
+  const translateDraft = (from: "ja" | "en", to: "ja" | "en") => {
+    if (!draft) return;
+    void translateWithConfirm({
+      busyKey: myKey,
+      from,
+      to,
+      fields: [{ key: to, label: to === "ja" ? "日本語" : "英語", source: draft[from], target: draft[to] }],
+      apply: (_key, text) => setDraft((d) => (d ? { ...d, [to]: text } : d)), // 編集取消済みなら何もしない
+    });
+  };
 
   const save = async () => {
     if (!draft) return;
@@ -29,7 +43,7 @@ export function PhraseRow({ phrase, categories, canDrag, editable }: {
     setDraft(null);
   };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.nativeEvent.isComposing) return; // 日本語変換中は無視
+    if (e.nativeEvent.isComposing) return;
     if (e.key === "Enter") {
       e.preventDefault();
       void save();
@@ -52,11 +66,16 @@ export function PhraseRow({ phrase, categories, canDrag, editable }: {
             <td>{handle}</td>
             <td>
               <input value={draft.ja} onChange={(e) => setDraft({ ...draft, ja: e.target.value })} onKeyDown={onKeyDown} autoFocus />
-              <button type="button" className="mini" disabled title="翻訳は M4 で有効になります">英→日</button>
+              <button type="button" className="mini" onClick={() => translateDraft("en", "ja")} disabled={busyKey !== null || draft.en.trim() === ""}>
+                英→日
+              </button>
+              {busyKey === myKey && <span className="hint"> 翻訳中…</span>}
             </td>
             <td>
               <input value={draft.en} onChange={(e) => setDraft({ ...draft, en: e.target.value })} onKeyDown={onKeyDown} />
-              <button type="button" className="mini" disabled title="翻訳は M4 で有効になります">日→英</button>
+              <button type="button" className="mini" onClick={() => translateDraft("ja", "en")} disabled={busyKey !== null || draft.ja.trim() === ""}>
+                日→英
+              </button>
             </td>
             <td><CategorySelect value={draft.categoryId} onChange={(categoryId) => setDraft({ ...draft, categoryId })} categories={categories} /></td>
             <td><input value={draft.tags} onChange={(e) => setDraft({ ...draft, tags: e.target.value })} onKeyDown={onKeyDown} placeholder=", 区切り" /></td>
@@ -67,7 +86,7 @@ export function PhraseRow({ phrase, categories, canDrag, editable }: {
               </label>
             </td>
             <td className="cell-actions">
-              <button type="button" onClick={() => void save()}>保存</button>
+              <button type="button" onClick={() => void save()} disabled={busyKey === myKey}>保存</button>
               <button type="button" onClick={() => setDraft(null)}>取消</button>
             </td>
           </>

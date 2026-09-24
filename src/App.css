@@ -328,3 +328,56 @@ tr.dragging { background: var(--pt-surface-2); box-shadow: 0 2px 8px rgb(0 0 0 /
   color: #f0d58a;
 }
 button.danger { color: #ff7b72; }
+
+/* ===== 翻訳 ===== */
+.translate-buttons { display: inline-flex; align-items: center; gap: 0.25rem; }
+
+.translation-settings {
+  --ts-surface: #1f232b;
+  --ts-border: #343a46;
+  --ts-muted: #8b95a5;
+  color-scheme: dark;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  max-width: 52rem;
+}
+.translation-settings h2 { font-size: 1rem; margin: 0; }
+.translation-settings input:not([type="checkbox"]):not([type="radio"]) {
+  height: 2rem;
+  padding: 0 0.6rem;
+  box-sizing: border-box;
+  background: var(--ts-surface);
+  color: inherit;
+  border: 1px solid var(--ts-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.875rem;
+}
+.ts-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.ts-row label { display: inline-flex; align-items: center; gap: 0.3rem; }
+.ts-label { width: 6.5rem; color: var(--ts-muted); font-size: 0.85rem; }
+.ts-wide { flex: 1 1 18rem; min-width: 0; }
+.ts-group { border: 1px solid var(--ts-border); border-radius: 8px; padding: 0.5rem 0.75rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.ts-group[data-active="false"] { opacity: 0.6; }
+.ts-group legend { padding: 0 0.3rem; font-size: 0.85rem; color: var(--ts-muted); }
+.ts-status { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+.ts-status.ok { color: #56d364; }
+.ts-status.error { color: #ff7b72; }
+
+/* ===== 翻訳: 対象チェック・読み取り専用・一括/元に戻す ===== */
+.field-row__checks { display: flex; flex-direction: column; gap: 0.2rem; }
+.field-row__sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--pt-muted, #8b95a5);
+  white-space: nowrap;
+}
+.field-row.is-locked input[type="text"],
+.field-row.is-locked textarea { opacity: 0.6; cursor: progress; }
+.set-row.is-locked { outline: 1px dashed rgb(76 141 255 / 0.5); outline-offset: 2px; }
+.bulk-translate { display: inline-flex; align-items: center; gap: 0.4rem; }
+.undo-btn { border-style: dashed; }
