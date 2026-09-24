@@ -31,16 +31,16 @@ export function OutputPanel({ doc, picks, translating }: Props) {
   return (
     <section className="output">
       <div className="output__title">
-        <h2>最終プロンプト</h2>
+        <h2>出力プロンプト</h2>
         {/* 各セットの 🎲 と同じデザイン */}
         <button
           type="button"
           onClick={rerollAll}
           disabled={translating}
           title={translating ? "翻訳中は操作できません" : "すべての [A / B] を再抽選"}
-          aria-label="全体再抽選"
+          aria-label="すべて再抽選"
         >
-          🎲
+          🎲 すべて再抽選
         </button>
       </div>
       <div className={`output__grid${langs.length === 1 ? " output__grid--single" : ""}`}>
