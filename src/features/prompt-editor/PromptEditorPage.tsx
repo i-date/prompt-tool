@@ -27,6 +27,7 @@ import { importPrompt, savePrompt, savePromptAs } from "./fileActions";
 import { OutputPanel } from "./OutputPanel";
 import { SetRow } from "./SetRow";
 import { useSaveShortcuts } from "./useSaveShortcuts";
+import { InfoTip } from "../../components/InfoTip";
 
 /** プロンプト作成画面の翻訳（一括 or セット単位）が実行中か。フレーズ管理の翻訳は含めない */
 const isPromptTranslating = (key: string | null): boolean =>
@@ -213,16 +214,21 @@ export function PromptEditorPage() {
             />
             {prefix}セクション後に空行
           </label>
+          <InfoTip label="区切りと改行について">
+            見出しのあるセットの前と、見出しだけのセットの後は、区切りの設定にかかわらず改行されます。
+          </InfoTip>
         </div>
       </div>
 
-      <p className="hint">
-        ※ 見出しのあるセットの前と、見出しだけのセットの後は、区切りの設定にかかわらず改行されます。
-        {translationOn && "「翻訳」のチェックを外した行は、個別翻訳・一括翻訳のどちらでも対象外になります。"}
-      </p>
-
       <div className={`field-row field-row--head${langs.length === 1 ? " field-row--single" : ""}`}>
-        <span>{translationOn ? "出力 / 翻訳" : "出力"}</span>
+        <span className="field-row__head-label">
+          {translationOn ? "出力 / 翻訳" : "出力"}
+          {translationOn && (
+            <InfoTip label="翻訳チェックについて" align="start">
+              「翻訳」のチェックを外した行は、個別翻訳・一括翻訳のどちらでも対象外になります。
+            </InfoTip>
+          )}
+        </span>
         {langs.map((lang) => (
           <span key={lang}>{LANG_LABEL[lang]}</span>
         ))}
