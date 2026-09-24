@@ -4,6 +4,7 @@ import { nextSort, sortPhrases } from "../../lib/phrases/sort";
 import { norm } from "../../lib/phrases/text";
 import { useEnsurePhrasesLoaded, usePhraseStore } from "../../stores/phraseStore";
 import { usePhraseViewStore } from "../../stores/phraseViewStore";
+import { InsertTargetBar } from "./InsertTargetBar";
 import { PhraseForm } from "./PhraseForm";
 import { PhraseTable } from "./PhraseTable";
 import { TransferMenu } from "./TransferMenu";
@@ -78,6 +79,7 @@ export function PhrasesPage() {
         <span className="count">{rows.length} / {data.phrases.length} 件</span>
         <TransferMenu />
       </div>
+      <InsertTargetBar />
       <PhraseTable
         rows={rows}
         categories={data.categories}

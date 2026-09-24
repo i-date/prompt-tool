@@ -37,22 +37,22 @@ export type SetPicks = { ja: number[]; en: number[] };
 export type Picks = Record<string, SetPicks>;
 
 /* ---------- フレーズ管理 ---------- */
-export type Category = { id: string; name: string; suggest: boolean };
+// export type Category = { id: string; name: string; suggest: boolean };
 
-export type Phrase = {
-  id: string;
-  ja: string;
-  en: string;
-  /** カテゴリはフレーズごとに1つ（null＝未分類） */
-  categoryId: string | null;
-  /** タグは複数 */
-  tags: string[];
-  /** 候補の対象にするか */
-  suggest: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+// export type Phrase = {
+//   id: string;
+//   ja: string;
+//   en: string;
+//   /** カテゴリはフレーズごとに1つ（null＝未分類） */
+//   categoryId: string | null;
+//   /** タグは複数 */
+//   tags: string[];
+//   /** 候補の対象にするか */
+//   suggest: boolean;
+//   createdAt: string;
+//   updatedAt: string;
+// };
 
-export type PhraseData = { version: 1; categories: Category[]; phrases: Phrase[] };
+// export type PhraseData = { version: 1; categories: Category[]; phrases: Phrase[] };
 
-export type PhraseInput = Pick<Phrase, "ja" | "en" | "categoryId" | "tags" | "suggest">;
+// export type PhraseInput = Pick<Phrase, "ja" | "en" | "categoryId" | "tags" | "suggest">;
