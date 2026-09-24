@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { SuggestField } from "../../components/SuggestField";
 import { useAutoResize } from "../../components/useAutoResize";
 import { confirmDialog } from "../../lib/confirm";
+import { visibleLangs } from "../../lib/langView";
 import { appendPhrase } from "../../lib/phrases/insert";
 import type { SuggestItem } from "../../lib/phrases/suggest";
 import { useInsertTargetStore } from "../../stores/insertTargetStore";
@@ -165,14 +166,16 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
   const translateOn = useTranslateTargetStore((s) => isTranslateTarget(s.off, setId, part));
   const setTarget = useTranslateTargetStore((s) => s.setTarget);
   const fillOther = useSettingsStore((s) => s.suggestFillOther);
+  const langView = useSettingsStore((s) => s.langView);
+  const langs = visibleLangs(langView);
   const setInsertTarget = useInsertTargetStore((s) => s.setTarget);
 
-  // 複数行（内容）のときは、日英 2 欄を「行数の多いほう + 1 行」の同じ高さにそろえる
+  // 複数行（内容）のときは、表示中の欄を「行数の多いほう + 1 行」の同じ高さにそろえる
   const jaRef = useRef<InputEl | null>(null);
   const enRef = useRef<InputEl | null>(null);
-  useAutoResize([jaRef, enRef], `${field.ja}\u0000${field.en}`, { enabled: !!multiline });
+  useAutoResize([jaRef, enRef], `${field.ja}\u0000${field.en}`, { enabled: !!multiline, layoutKey: langView });
 
-  /** 候補を選んだとき、もう一方の言語の欄の末尾にも訳を追加する（既にあれば追加しない） */
+  /** 候補を選んだとき、もう一方の言語の欄の末尾にも訳を追加する（非表示の欄にも入る） */
   const fillOtherLang = (lang: Lang) => (item: SuggestItem) => {
     const other: Lang = lang === "ja" ? "en" : "ja";
     const current = usePromptStore.getState().doc.sets.find((s) => s.id === setId)?.[part][other];
@@ -183,6 +186,7 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
 
   const box = (lang: Lang) => (
     <SuggestField
+      key={lang}
       lang={lang}
       value={field[lang]}
       readOnly={locked}
@@ -199,7 +203,7 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
   );
 
   return (
-    <div className={`field-row${locked ? " is-locked" : ""}`}>
+    <div className={`field-row${langs.length === 1 ? " field-row--single" : ""}${locked ? " is-locked" : ""}`}>
       <div className="field-row__checks">
         <label className="field-row__label" title="最終プロンプトに出力する">
           <input type="checkbox" checked={field.output} onChange={() => toggleOutput(setId, part)} disabled={locked} />
@@ -217,8 +221,7 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
           </label>
         )}
       </div>
-      {box("ja")}
-      {box("en")}
+      {langs.map(box)}
     </div>
   );
 }
