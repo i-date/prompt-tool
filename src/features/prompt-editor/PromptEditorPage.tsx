@@ -146,14 +146,14 @@ export function PromptEditorPage() {
         <div className="spacer" />
         {/* 「全セット 日→英」と「↶ 元に戻す」（翻訳機能が有効なときだけ） */}
         {translationOn && <BulkTranslateBar sets={doc.sets} />}
-        <button
+        {/* <button
           type="button"
           onClick={rerollAll}
           disabled={translating}
           title={translating ? busyTitle : "すべての [A / B] を再抽選"}
         >
           🎲 全体再抽選
-        </button>
+        </button> */}
       </div>
 
       <div className="toolbar toolbar--format">
@@ -224,7 +224,7 @@ export function PromptEditorPage() {
 
       <button type="button" className="add-set" onClick={addSet}>＋ セットを追加</button>
 
-      <OutputPanel doc={doc} picks={picks} />
+      <OutputPanel doc={doc} picks={picks} translating={translating} />
     </div>
   );
 }
