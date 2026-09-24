@@ -419,3 +419,11 @@ button.danger { color: #ff7b72; }
 .phrase-table .col-actions { width: 13.5rem; }
 .insert-btn { color: var(--pt-accent); }
 .settings__sub { margin-top: 10px; }
+
+/* ===== 自動高さ調整（内容欄・最終プロンプト）：高さ = テキスト行数 + 1 行 ===== */
+textarea.autosize {
+  line-height: 1.5;   /* 1 行の高さを固定して計算をずらさない */
+  resize: none;       /* 高さは自動なので手動リサイズは無効 */
+  overflow-y: hidden; /* 高さを合わせるのでスクロールバーは不要 */
+}
+.output textarea.autosize { min-height: 0; } /* 既存の min-height: 160px を解除 */

@@ -9,6 +9,7 @@ import {
 } from "../lib/phrases/suggest";
 import { useEnsurePhrasesLoaded, usePhraseStore } from "../stores/phraseStore";
 import { useSettingsStore } from "../stores/settingsStore";
+import { useAutoResize } from "./useAutoResize";
 
 type El = HTMLInputElement | HTMLTextAreaElement;
 type Open = SuggestResult & { index: number };
@@ -22,10 +23,25 @@ type Props = {
   onFocus?: () => void;
   /** 候補を挿入した直後に呼ぶ（もう一方の言語の欄へ訳を追加するなど）。指定時は候補に「＋ 訳」を表示 */
   onPick?: (item: SuggestItem) => void;
+  /** 入力欄の要素を親に渡す（親で複数欄の高さをそろえるときなど） */
+  inputRef?: (el: El | null) => void;
+  /** 複数行のとき自分で高さを合わせるか（既定 true）。親がまとめて合わせるときは false */
+  autoResize?: boolean;
 };
 
 /** 入力中の語句に合うフレーズを下に表示する入力欄（↑↓で選択、Enter / Tab で挿入、Esc で閉じる） */
-export function SuggestField({ lang, value, onValueChange, multiline, readOnly = false, placeholder, onFocus, onPick }: Props) {
+export function SuggestField({
+  lang,
+  value,
+  onValueChange,
+  multiline,
+  readOnly = false,
+  placeholder,
+  onFocus,
+  onPick,
+  inputRef,
+  autoResize = true,
+}: Props) {
   useEnsurePhrasesLoaded();
   const suggestOn = useSettingsStore((s) => s.suggest);
   const data = usePhraseStore((s) => s.data);
@@ -34,6 +50,14 @@ export function SuggestField({ lang, value, onValueChange, multiline, readOnly =
   const [open, setOpen] = useState<Open | null>(null);
   const enabled = suggestOn && !readOnly;
   const shown = enabled ? open : null;
+
+  // 複数行のときは「テキスト行数 + 1 行」の高さに自動調整（親がそろえる場合はしない）
+  useAutoResize(elRef, value, { enabled: !!multiline && autoResize });
+
+  const setEl = (el: El | null) => {
+    elRef.current = el;
+    inputRef?.(el);
+  };
 
   const refresh = (text: string, el: El) => {
     const caret = el.selectionStart;
@@ -112,9 +136,9 @@ export function SuggestField({ lang, value, onValueChange, multiline, readOnly =
   return (
     <div className="suggest">
       {multiline ? (
-        <textarea rows={3} ref={(el) => { elRef.current = el; }} {...common} />
+        <textarea rows={1} className="autosize" ref={setEl} {...common} />
       ) : (
-        <input type="text" ref={(el) => { elRef.current = el; }} {...common} />
+        <input type="text" ref={setEl} {...common} />
       )}
       {shown && (
         <ul className="suggest__list" role="listbox">
