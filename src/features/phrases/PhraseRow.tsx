@@ -7,6 +7,7 @@ import { useTranslationEnabled } from "../../stores/translationSettingsStore";
 import { translateWithConfirm, useTranslateBusy } from "../translate/translateActions";
 import { CategorySelect } from "./CategorySelect";
 import { type PhraseDraft, fromDraft, toDraft } from "./draft";
+import { insertPhraseIntoPrompt } from "./insertPhrase";
 
 export function PhraseRow({ phrase, categories, canDrag, editable }: {
   phrase: Phrase;
@@ -117,6 +118,14 @@ export function PhraseRow({ phrase, categories, canDrag, editable }: {
               </label>
             </td>
             <td className="cell-actions">
+              <button
+                type="button"
+                className="insert-btn"
+                onClick={() => insertPhraseIntoPrompt(phrase)}
+                title="上の「挿入先」の欄（日本語・英語）の末尾に追加"
+              >
+                挿入
+              </button>
               <button type="button" onClick={() => setDraft(toDraft(phrase))} disabled={!editable}>編集</button>
               <button type="button" className="danger" onClick={() => void remove()} disabled={!editable}>削除</button>
             </td>

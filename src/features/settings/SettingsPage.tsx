@@ -8,7 +8,9 @@ import { TranslationSettings } from "./TranslationSettings";
 export function SettingsPage() {
   const trimContent = useSettingsStore((s) => s.trimContent);
   const promptDir = useSettingsStore((s) => s.promptDir);
-  const { setTrimContent, setPromptDir } = useSettingsStore.getState();
+  const suggest = useSettingsStore((s) => s.suggest);
+  const suggestFillOther = useSettingsStore((s) => s.suggestFillOther);
+  const { setTrimContent, setPromptDir, setSuggest, setSuggestFillOther } = useSettingsStore.getState();
   const [resolved, setResolved] = useState("");
 
   useEffect(() => {
@@ -70,6 +72,30 @@ export function SettingsPage() {
         <p className="hint">
           OFFにすると、内容を入力したまま出力します（空白だけの内容は出力しません）。見出しと [A / B]
           の選択肢は常にトリムされます。
+        </p>
+      </section>
+
+      <section className="panel">
+        <h2>フレーズ候補</h2>
+        <label className="check">
+          <input type="checkbox" checked={suggest} onChange={(e) => void setSuggest(e.target.checked)} />
+          プロンプト入力中にフレーズの候補を表示する
+        </label>
+        <p className="hint">
+          「候補の対象」がONのフレーズ（カテゴリもON）から、入力中の語句に合うものを表示します。
+          English 欄で日本語を入力すると、対応する英語フレーズを挿入できます。
+        </p>
+        <label className="check settings__sub">
+          <input
+            type="checkbox"
+            checked={suggestFillOther}
+            disabled={!suggest}
+            onChange={(e) => void setSuggestFillOther(e.target.checked)}
+          />
+          候補を選んだとき、もう一方の言語の欄にも訳を追加する
+        </label>
+        <p className="hint">
+          訳は欄の末尾に「, 」でつないで追加します（同じ語句が既にあれば追加しません）。
         </p>
       </section>
 

@@ -1,7 +1,12 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { SuggestField } from "../../components/SuggestField";
 import { confirmDialog } from "../../lib/confirm";
+import { appendPhrase } from "../../lib/phrases/insert";
+import type { SuggestItem } from "../../lib/phrases/suggest";
+import { useInsertTargetStore } from "../../stores/insertTargetStore";
 import { usePromptStore } from "../../stores/promptStore";
+import { useSettingsStore } from "../../stores/settingsStore";
 import { isTranslateTarget, useTranslateTargetStore } from "../../stores/translateTargetStore";
 import { useTranslationEnabled } from "../../stores/translationSettingsStore";
 import type { Field, FormatOptions, Lang, Part, PromptSet, Separator } from "../../types";
@@ -155,17 +160,30 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
   const toggleOutput = usePromptStore((s) => s.toggleOutput);
   const translateOn = useTranslateTargetStore((s) => isTranslateTarget(s.off, setId, part));
   const setTarget = useTranslateTargetStore((s) => s.setTarget);
+  const fillOther = useSettingsStore((s) => s.suggestFillOther);
+  const setInsertTarget = useInsertTargetStore((s) => s.setTarget);
 
-  const box = (lang: Lang) => {
-    const common = {
-      value: field[lang],
-      readOnly: locked,
-      placeholder: lang === "ja" ? `${label}（日本語）` : `${label} (English)`,
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-        updateText(setId, part, lang, e.target.value),
-    };
-    return multiline ? <textarea rows={3} {...common} /> : <input type="text" {...common} />;
+  /** 候補を選んだとき、もう一方の言語の欄の末尾にも訳を追加する（既にあれば追加しない） */
+  const fillOtherLang = (lang: Lang) => (item: SuggestItem) => {
+    const other: Lang = lang === "ja" ? "en" : "ja";
+    const current = usePromptStore.getState().doc.sets.find((s) => s.id === setId)?.[part][other];
+    if (current === undefined) return;
+    const r = appendPhrase(current, item.other);
+    if (r.changed) updateText(setId, part, other, r.value);
   };
+
+  const box = (lang: Lang) => (
+    <SuggestField
+      lang={lang}
+      value={field[lang]}
+      readOnly={locked}
+      multiline={multiline}
+      placeholder={lang === "ja" ? `${label}（日本語）` : `${label} (English)`}
+      onValueChange={(v) => updateText(setId, part, lang, v)}
+      onFocus={() => setInsertTarget({ setId, part })}
+      onPick={fillOther ? fillOtherLang(lang) : undefined}
+    />
+  );
 
   return (
     <div className={`field-row${locked ? " is-locked" : ""}`}>
