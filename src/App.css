@@ -427,3 +427,9 @@ textarea.autosize {
   overflow-y: hidden; /* 高さを合わせるのでスクロールバーは不要 */
 }
 .output textarea.autosize { min-height: 0; } /* 既存の min-height: 160px を解除 */
+
+/* ===== 最終プロンプト：見出し横の全体再抽選ボタン ===== */
+.output__title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.output__title h2 { margin-block: 0; }
+.output { row-gap: 8px; }
+.output__title + .output__grid { margin-top: 8px; }

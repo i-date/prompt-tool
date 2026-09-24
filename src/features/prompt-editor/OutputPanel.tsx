@@ -1,13 +1,20 @@
 import { type Ref, useMemo, useRef } from "react";
 import { useAutoResize } from "../../components/useAutoResize";
 import { buildPrompt } from "../../lib/prompt-builder";
+import { usePromptStore } from "../../stores/promptStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import type { Picks, PromptDoc } from "../../types";
 
-type Props = { doc: PromptDoc; picks: Picks };
+type Props = {
+  doc: PromptDoc;
+  picks: Picks;
+  /** プロンプト作成画面で翻訳中か（true のあいだは再抽選できない） */
+  translating: boolean;
+};
 
-export function OutputPanel({ doc, picks }: Props) {
+export function OutputPanel({ doc, picks, translating }: Props) {
   const trimContent = useSettingsStore((s) => s.trimContent);
+  const rerollAll = usePromptStore((s) => s.rerollAll);
   const ja = useMemo(() => buildPrompt(doc, picks, "ja", { trimContent }), [doc, picks, trimContent]);
   const en = useMemo(() => buildPrompt(doc, picks, "en", { trimContent }), [doc, picks, trimContent]);
 
@@ -18,7 +25,19 @@ export function OutputPanel({ doc, picks }: Props) {
 
   return (
     <section className="output">
-      <h2>最終プロンプト</h2>
+      <div className="output__title">
+        <h2>出力プロンプト</h2>
+        {/* 各セットの 🎲 と同じデザイン。処理はツールバーの「全体再抽選」と同じ */}
+        <button
+          type="button"
+          onClick={rerollAll}
+          disabled={translating}
+          title={translating ? "翻訳中は操作できません" : "すべての [A / B] を再抽選"}
+          aria-label="全体再抽選"
+        >
+          🎲 すべて再抽選
+        </button>
+      </div>
       <div className="output__grid">
         <OutputColumn label="日本語" text={ja} textareaRef={jaRef} />
         <OutputColumn label="English" text={en} textareaRef={enRef} />
