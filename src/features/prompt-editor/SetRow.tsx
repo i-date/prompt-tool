@@ -1,6 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useRef } from "react";
 import { SuggestField } from "../../components/SuggestField";
+import { useAutoResize } from "../../components/useAutoResize";
 import { confirmDialog } from "../../lib/confirm";
 import { appendPhrase } from "../../lib/phrases/insert";
 import type { SuggestItem } from "../../lib/phrases/suggest";
@@ -155,6 +157,8 @@ type FieldRowProps = {
   multiline?: boolean;
 };
 
+type InputEl = HTMLInputElement | HTMLTextAreaElement;
+
 function FieldRow({ setId, part, label, field, locked, showTranslate, multiline }: FieldRowProps) {
   const updateText = usePromptStore((s) => s.updateText);
   const toggleOutput = usePromptStore((s) => s.toggleOutput);
@@ -162,6 +166,11 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
   const setTarget = useTranslateTargetStore((s) => s.setTarget);
   const fillOther = useSettingsStore((s) => s.suggestFillOther);
   const setInsertTarget = useInsertTargetStore((s) => s.setTarget);
+
+  // 複数行（内容）のときは、日英 2 欄を「行数の多いほう + 1 行」の同じ高さにそろえる
+  const jaRef = useRef<InputEl | null>(null);
+  const enRef = useRef<InputEl | null>(null);
+  useAutoResize([jaRef, enRef], `${field.ja}\u0000${field.en}`, { enabled: !!multiline });
 
   /** 候補を選んだとき、もう一方の言語の欄の末尾にも訳を追加する（既にあれば追加しない） */
   const fillOtherLang = (lang: Lang) => (item: SuggestItem) => {
@@ -178,6 +187,10 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
       value={field[lang]}
       readOnly={locked}
       multiline={multiline}
+      autoResize={false}
+      inputRef={(el) => {
+        (lang === "ja" ? jaRef : enRef).current = el;
+      }}
       placeholder={lang === "ja" ? `${label}（日本語）` : `${label} (English)`}
       onValueChange={(v) => updateText(setId, part, lang, v)}
       onFocus={() => setInsertTarget({ setId, part })}
