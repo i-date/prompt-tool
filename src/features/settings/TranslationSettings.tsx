@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { translateTexts } from "../../lib/translate/client";
 import type { Engine } from "../../lib/translate/settings";
 import { type Provider, useTranslationSettingsStore } from "../../stores/translationSettingsStore";
+import { useTranslateUndoStore } from "../../stores/translateUndoStore";
+import { useTranslateBusy } from "../translate/translateActions";
 
 type Usage = { plan: "free" | "pro"; characterCount: number; characterLimit: number };
 type Status = { kind: "ok" | "error"; text: string } | null;
@@ -30,7 +32,10 @@ function useAction() {
 const StatusLine = ({ status }: { status: Status }) =>
   status ? <p className={`ts-status ${status.kind}`}>{status.text}</p> : null;
 
-const ENGINES: { value: Engine; label: string }[] = [
+/** "off" = 翻訳機能を使わない */
+type Choice = Engine | "off";
+const CHOICES: { value: Choice; label: string }[] = [
+  { value: "off", label: "無効" },
   { value: "deepl", label: "DeepL（クラウド）" },
   { value: "google", label: "Google 翻訳（Cloud Translation）" },
   { value: "ollama", label: "Ollama（ローカル LLM）" },
@@ -147,11 +152,26 @@ export function TranslationSettings() {
   const settings = useTranslationSettingsStore((s) => s.settings);
   const loaded = useTranslationSettingsStore((s) => s.loaded);
   const update = useTranslationSettingsStore((s) => s.update);
+  const translating = useTranslateBusy((s) => s.key !== null);
   const { busy, status, setStatus, act } = useAction();
 
   useEffect(() => {
     useTranslationSettingsStore.getState().ensureLoaded().catch((e) => setStatus({ kind: "error", text: errText(e) }));
   }, [setStatus]);
+
+  const current: Choice = settings.enabled ? settings.engine : "off";
+  const choose = async (v: Choice) => {
+    try {
+      if (v === "off") {
+        await update({ enabled: false }); // エンジン・URL などは残す
+        useTranslateUndoStore.getState().clear(); // 非表示になる「元に戻す」は捨てる
+      } else {
+        await update({ enabled: true, engine: v });
+      }
+    } catch (e) {
+      setStatus({ kind: "error", text: `設定を保存できませんでした: ${errText(e)}` });
+    }
+  };
 
   const testDeepl = async () => {
     const u = await invoke<Usage>("deepl_usage");
@@ -169,38 +189,53 @@ export function TranslationSettings() {
       <h2>翻訳</h2>
       <div className="ts-row">
         <span className="ts-label">翻訳エンジン</span>
-        {ENGINES.map((e) => (
-          <label key={e.value}>
-            <input type="radio" name="engine" checked={settings.engine === e.value} onChange={() => void update({ engine: e.value })} disabled={!loaded} />
-            {e.label}
+        {CHOICES.map((c) => (
+          <label key={c.value} title={translating ? "翻訳中は切り替えできません" : undefined}>
+            <input
+              type="radio"
+              name="engine"
+              checked={current === c.value}
+              onChange={() => void choose(c.value)}
+              disabled={!loaded || translating}
+            />
+            {c.label}
           </label>
         ))}
       </div>
 
-      <ApiKeySection
-        provider="deepl"
-        title="DeepL"
-        active={settings.engine === "deepl"}
-        placeholder="xxxxxxxx-xxxx-...:fx"
-        note="末尾が :fx のキーは Free 版として扱います。キーは Windows の資格情報マネージャーに保存され、ファイルやリポジトリには書き込まれません。"
-        test={testDeepl}
-      />
-      <ApiKeySection
-        provider="google"
-        title="Google 翻訳"
-        active={settings.engine === "google"}
-        placeholder="AIza..."
-        note="Google Cloud で Cloud Translation API を有効化して作成した API キーを使います。キーは「Cloud Translation API のみ」に制限しておくと安全です。"
-        test={testGoogle}
-      />
-      <OllamaSection active={settings.engine === "ollama"} />
+      {settings.enabled ? (
+        <>
+          <ApiKeySection
+            provider="deepl"
+            title="DeepL"
+            active={settings.engine === "deepl"}
+            placeholder="xxxxxxxx-xxxx-...:fx"
+            note="末尾が :fx のキーは Free 版として扱います。キーは Windows の資格情報マネージャーに保存され、ファイルやリポジトリには書き込まれません。"
+            test={testDeepl}
+          />
+          <ApiKeySection
+            provider="google"
+            title="Google 翻訳"
+            active={settings.engine === "google"}
+            placeholder="AIza..."
+            note="Google Cloud で Cloud Translation API を有効化して作成した API キーを使います。キーは「Cloud Translation API のみ」に制限しておくと安全です。"
+            test={testGoogle}
+          />
+          <OllamaSection active={settings.engine === "ollama"} />
 
-      <div className="ts-row">
-        <button type="button" onClick={() => void testTranslate()} disabled={busy || !loaded}>
-          テスト翻訳（選択中のエンジンで日→英）
-        </button>
-        {busy && <span className="hint">実行中…</span>}
-      </div>
+          <div className="ts-row">
+            <button type="button" onClick={() => void testTranslate()} disabled={busy || !loaded}>
+              テスト翻訳（選択中のエンジンで日→英）
+            </button>
+            {busy && <span className="hint">実行中…</span>}
+          </div>
+        </>
+      ) : (
+        <p className="hint">
+          翻訳機能は無効です。プロンプト作成・フレーズ管理の画面に翻訳ボタンや「翻訳」チェックは表示されません。
+          登録済みの API キーやエンジンの設定は残るので、エンジンを選び直せばすぐに使えます。
+        </p>
+      )}
       <StatusLine status={status} />
     </section>
   );

@@ -17,13 +17,18 @@ import { confirmDialog } from "../../lib/confirm";
 import { baseName } from "../../lib/files";
 import { selectIsDirty, usePromptStore } from "../../stores/promptStore";
 import { useTranslateUndoStore } from "../../stores/translateUndoStore";
+import { useTranslationEnabled } from "../../stores/translationSettingsStore";
 import type { FormatMode, Separator } from "../../types";
+import { BULK_KEY, useTranslateBusy } from "../translate/translateActions";
 import { BulkTranslateBar } from "./BulkTranslateBar";
 import { importPrompt, savePrompt, savePromptAs } from "./fileActions";
 import { OutputPanel } from "./OutputPanel";
 import { SetRow } from "./SetRow";
 import { useSaveShortcuts } from "./useSaveShortcuts";
-import { useTranslateBusy } from "./useTranslateBusy";
+
+/** プロンプト作成画面の翻訳（一括 or セット単位）が実行中か。フレーズ管理の翻訳は含めない */
+const isPromptTranslating = (key: string | null): boolean =>
+  key === BULK_KEY || (key?.startsWith("set:") ?? false);
 
 export function PromptEditorPage() {
   const doc = usePromptStore((s) => s.doc);
@@ -33,8 +38,8 @@ export function PromptEditorPage() {
   const { addSet, moveSet, setFormatMode, setGlobalFormat, rerollAll, resetDoc } =
     usePromptStore.getState(); // アクションは不変なので getState で取得
 
-  // 翻訳中（個別・一括のどちらか）かどうか
-  const translating = useTranslateBusy((s) => s.busyIds.length > 0);
+  const translationOn = useTranslationEnabled();
+  const translating = useTranslateBusy((s) => isPromptTranslating(s.key));
   const translatingRef = useRef(translating);
   translatingRef.current = translating;
 
@@ -44,11 +49,6 @@ export function PromptEditorPage() {
     const t = setTimeout(() => setNotice(null), 2000);
     return () => clearTimeout(t);
   }, [notice]);
-
-  // 別のファイルを開いた・新規作成したときは、前の文書に対する「元に戻す」を捨てる
-  useEffect(() => {
-    useTranslateUndoStore.getState().clear();
-  }, [filePath]);
 
   const savingRef = useRef(false);
   const runSave = useCallback(async (fn: () => Promise<boolean>) => {
@@ -83,6 +83,13 @@ export function PromptEditorPage() {
     useTranslateUndoStore.getState().clear();
   };
 
+  /** 取り込みで文書が実際に入れ替わったときだけ「元に戻す」を捨てる（キャンセル時は残す） */
+  const handleImport = async () => {
+    const before = usePromptStore.getState().doc;
+    await importPrompt();
+    if (usePromptStore.getState().doc !== before) useTranslateUndoStore.getState().clear();
+  };
+
   const busyTitle = "翻訳中は操作できません";
   const perSet = doc.formatMode === "perSet";
   const prefix = perSet ? "既定の" : "";
@@ -102,7 +109,7 @@ export function PromptEditorPage() {
           type="button"
           disabled={translating}
           title={translating ? busyTitle : undefined}
-          onClick={() => void importPrompt()}
+          onClick={() => void handleImport()}
         >
           取り込み
         </button>
@@ -137,8 +144,8 @@ export function PromptEditorPage() {
           isDirty && <span className="dirty">● 未保存</span>
         )}
         <div className="spacer" />
-        {/* 「全セットを一括で日→英」と「↶ 元に戻す」 */}
-        <BulkTranslateBar />
+        {/* 「全セット 日→英」と「↶ 元に戻す」（翻訳機能が有効なときだけ） */}
+        {translationOn && <BulkTranslateBar sets={doc.sets} />}
         <button
           type="button"
           onClick={rerollAll}
@@ -189,11 +196,11 @@ export function PromptEditorPage() {
       </div>
       <p className="hint">
         ※ 見出しのあるセットの前と、見出しだけのセットの後は、区切りの設定にかかわらず改行されます。
-        「翻訳」のチェックを外した行は、個別翻訳・一括翻訳のどちらでも対象外になります。
+        {translationOn && "「翻訳」のチェックを外した行は、個別翻訳・一括翻訳のどちらでも対象外になります。"}
       </p>
 
       <div className="field-row field-row--head">
-        <span>出力 / 翻訳</span>
+        <span>{translationOn ? "出力 / 翻訳" : "出力"}</span>
         <span>日本語</span>
         <span>English</span>
       </div>

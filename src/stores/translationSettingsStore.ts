@@ -63,3 +63,10 @@ export const useTranslationSettingsStore = create<State>()((set, get) => ({
     set((s) => ({ keyStatus: { ...s.keyStatus, [provider]: st } }));
   },
 }));
+
+/**
+ * 翻訳関連の UI を表示してよいか。
+ * 設定の読み込みが終わるまでは false（起動直後にボタンが一瞬出て消えるのを防ぐ）
+ */
+export const useTranslationEnabled = (): boolean =>
+  useTranslationSettingsStore((s) => s.loaded && s.settings.enabled);

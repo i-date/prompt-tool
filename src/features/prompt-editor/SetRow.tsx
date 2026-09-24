@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { confirmDialog } from "../../lib/confirm";
 import { usePromptStore } from "../../stores/promptStore";
 import { isTranslateTarget, useTranslateTargetStore } from "../../stores/translateTargetStore";
+import { useTranslationEnabled } from "../../stores/translationSettingsStore";
 import type { Field, FormatOptions, Lang, Part, PromptSet, Separator } from "../../types";
 import { BULK_KEY, setBusyKey, useTranslateBusy } from "../translate/translateActions";
 import { SetTranslateButtons } from "./SetTranslateButtons";
@@ -26,6 +27,7 @@ const SEPS: readonly Choice<Separator>[] = [
 ];
 
 export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
+  const translationOn = useTranslationEnabled();
   const busyKey = useTranslateBusy((s) => s.key);
   const locked = busyKey === BULK_KEY || busyKey === setBusyKey(set.id); // 翻訳中は読み取り専用
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
@@ -59,7 +61,7 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
           ⋮⋮
         </button>
         <span className="set-row__no">#{index + 1}</span>
-        <SetTranslateButtons set={set} label={`#${index + 1}`} />
+        {translationOn && <SetTranslateButtons set={set} label={`#${index + 1}`} />}
         <div className="spacer" />
         <button type="button" onClick={() => rerollSet(set.id)} title="このセットを再抽選">
           🎲
@@ -99,8 +101,8 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
         </div>
       )}
 
-      <FieldRow setId={set.id} part="heading" label="見出し" field={set.heading} locked={locked} />
-      <FieldRow setId={set.id} part="content" label="内容" field={set.content} locked={locked} multiline />
+      <FieldRow setId={set.id} part="heading" label="見出し" field={set.heading} locked={locked} showTranslate={translationOn} />
+      <FieldRow setId={set.id} part="content" label="内容" field={set.content} locked={locked} showTranslate={translationOn} multiline />
     </section>
   );
 }
@@ -143,10 +145,12 @@ type FieldRowProps = {
   label: string;
   field: Field;
   locked: boolean;
+  /** 「翻訳」チェックを表示するか（翻訳機能が無効なら false） */
+  showTranslate: boolean;
   multiline?: boolean;
 };
 
-function FieldRow({ setId, part, label, field, locked, multiline }: FieldRowProps) {
+function FieldRow({ setId, part, label, field, locked, showTranslate, multiline }: FieldRowProps) {
   const updateText = usePromptStore((s) => s.updateText);
   const toggleOutput = usePromptStore((s) => s.toggleOutput);
   const translateOn = useTranslateTargetStore((s) => isTranslateTarget(s.off, setId, part));
@@ -170,15 +174,17 @@ function FieldRow({ setId, part, label, field, locked, multiline }: FieldRowProp
           <input type="checkbox" checked={field.output} onChange={() => toggleOutput(setId, part)} disabled={locked} />
           {label}
         </label>
-        <label className="field-row__sub" title="翻訳ボタン・一括翻訳の対象にする">
-          <input
-            type="checkbox"
-            checked={translateOn}
-            onChange={(e) => setTarget(setId, part, e.target.checked)}
-            disabled={locked}
-          />
-          翻訳
-        </label>
+        {showTranslate && (
+          <label className="field-row__sub" title="翻訳ボタン・一括翻訳の対象にする">
+            <input
+              type="checkbox"
+              checked={translateOn}
+              onChange={(e) => setTarget(setId, part, e.target.checked)}
+              disabled={locked}
+            />
+            翻訳
+          </label>
+        )}
       </div>
       {box("ja")}
       {box("en")}

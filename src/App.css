@@ -357,7 +357,7 @@ button.danger { color: #ff7b72; }
 }
 .ts-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .ts-row label { display: inline-flex; align-items: center; gap: 0.3rem; }
-.ts-label { width: 6.5rem; color: var(--ts-muted); font-size: 0.85rem; }
+.ts-label { width: 6rem; color: var(--ts-muted); font-size: 0.85rem; }
 .ts-wide { flex: 1 1 18rem; min-width: 0; }
 .ts-group { border: 1px solid var(--ts-border); border-radius: 8px; padding: 0.5rem 0.75rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .ts-group[data-active="false"] { opacity: 0.6; }
