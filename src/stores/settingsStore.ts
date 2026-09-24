@@ -1,5 +1,6 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { create } from "zustand";
+import { DEFAULT_LANG_VIEW, type LangView, sanitizeLangView } from "../lib/langView";
 
 export type Settings = {
   trimContent: boolean;
@@ -9,9 +10,17 @@ export type Settings = {
   suggest: boolean;
   /** 候補を選んだとき、もう一方の言語の欄にも訳を追加する */
   suggestFillOther: boolean;
+  /** プロンプト作成タブで表示する言語の列 */
+  langView: LangView;
 };
 
-const DEFAULTS: Settings = { trimContent: true, promptDir: null, suggest: true, suggestFillOther: true };
+const DEFAULTS: Settings = {
+  trimContent: true,
+  promptDir: null,
+  suggest: true,
+  suggestFillOther: true,
+  langView: DEFAULT_LANG_VIEW,
+};
 
 // %APPDATA%\<identifier>\settings.json に保存される
 let storePromise: Promise<Store> | null = null;
@@ -31,6 +40,7 @@ type SettingsState = Settings & {
   setPromptDir: (dir: string | null) => Promise<void>;
   setSuggest: (v: boolean) => Promise<void>;
   setSuggestFillOther: (v: boolean) => Promise<void>;
+  setLangView: (v: LangView) => Promise<void>;
 };
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
@@ -43,7 +53,8 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
     const promptDir = (await store.get<string | null>("promptDir")) ?? DEFAULTS.promptDir;
     const suggest = (await store.get<boolean>("suggest")) ?? DEFAULTS.suggest;
     const suggestFillOther = (await store.get<boolean>("suggestFillOther")) ?? DEFAULTS.suggestFillOther;
-    set({ trimContent, promptDir, suggest, suggestFillOther, loaded: true });
+    const langView = sanitizeLangView(await store.get("langView"));
+    set({ trimContent, promptDir, suggest, suggestFillOther, langView, loaded: true });
   },
   setTrimContent: async (v) => {
     set({ trimContent: v });
@@ -60,5 +71,9 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setSuggestFillOther: async (v) => {
     set({ suggestFillOther: v });
     await persist("suggestFillOther", v);
+  },
+  setLangView: async (v) => {
+    set({ langView: v });
+    await persist("langView", v);
   },
 }));

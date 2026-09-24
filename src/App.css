@@ -433,3 +433,31 @@ textarea.autosize {
 .output__title h2 { margin-block: 0; }
 .output { row-gap: 8px; }
 .output__title + .output__grid { margin-top: 8px; }
+
+/* ===== プロンプト作成：操作パネル（上段：ファイル・翻訳／下段：表示列・書式） ===== */
+.editor-panel {
+  margin-bottom: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.editor-bar {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px 12px; padding: 8px 10px;
+}
+.editor-bar + .editor-bar { border-top: 1px solid var(--border); }
+.editor-bar--sub { font-size: 13px; }
+.bar-group { display: inline-flex; align-items: center; gap: 6px; }
+.bar-sep { width: 1px; height: 20px; background: var(--border); }
+.bar-field { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.bar-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.editor-bar button,
+.editor-bar select { height: 32px; }
+.editor-bar select { width: auto; padding: 0 8px; }
+.editor-bar .check { gap: 5px; }
+.file-status { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.prompt-editor > .hint { margin: 0 2px 12px; }
+
+/* ===== 表示列が 1 つのとき ===== */
+.field-row--single { grid-template-columns: 90px 1fr; }
+.output__grid--single { grid-template-columns: 1fr; }
