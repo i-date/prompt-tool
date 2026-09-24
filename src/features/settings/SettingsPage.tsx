@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { showError } from "../../lib/confirm";
 import { resolvePromptDir } from "../../lib/files";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { TranslationSettings } from "./TranslationSettings";
 
 export function SettingsPage() {
   const trimContent = useSettingsStore((s) => s.trimContent);
@@ -72,7 +73,7 @@ export function SettingsPage() {
         </p>
       </section>
 
-      <p className="placeholder">翻訳エンジンの設定は M4 で追加予定です。</p>
+      <TranslationSettings />
     </div>
   );
 }

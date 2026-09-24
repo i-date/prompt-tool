@@ -7,6 +7,7 @@ import { PromptEditorPage } from "./features/prompt-editor/PromptEditorPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { useCloseGuard } from "./hooks/useCloseGuard";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useTranslationSettingsStore } from "./stores/translationSettingsStore";
 import type { TabKey } from "./types";
 
 function App() {
@@ -18,6 +19,11 @@ function App() {
       .getState()
       .init()
       .catch((e) => console.error("設定の読み込みに失敗しました", e));
+    // 翻訳ボタンの表示／非表示を決めるため、起動時に読み込んでおく
+    useTranslationSettingsStore
+      .getState()
+      .ensureLoaded()
+      .catch((e) => console.error("翻訳設定の読み込みに失敗しました", e));
   }, []);
 
   return (
