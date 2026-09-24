@@ -84,7 +84,7 @@ npm run tauri build
 | ファイル | 内容 |
 |---|---|
 | `src-tauri\target\release\bundle\nsis\Prompt Tool_<バージョン>_x64-setup.exe` | インストーラー（配布用） |
-| `src-tauri\target\release\prompt-tool2.exe` | 単体の exe（インストールせずに起動したい場合） |
+| `src-tauri\target\release\prompt-tool.exe` | 単体の exe（インストールせずに起動したい場合） |
 
 ### 6. 動作確認
 
