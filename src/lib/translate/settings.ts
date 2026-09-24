@@ -8,7 +8,7 @@ export type TranslationSettings = {
 };
 
 export const DEFAULT_TRANSLATION_SETTINGS: TranslationSettings = {
-  enabled: true,
+  enabled: false, // 既定は無効。設定タブで有効にしたときだけ翻訳 UI を出す
   engine: "deepl",
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "translategemma",
@@ -21,7 +21,8 @@ export function sanitizeTranslationSettings(raw: unknown): TranslationSettings {
   const str = (v: unknown, d: string) => (typeof v === "string" && v.trim() !== "" ? v.trim() : d);
   const D = DEFAULT_TRANSLATION_SETTINGS;
   return {
-    enabled: typeof o.enabled === "boolean" ? o.enabled : D.enabled, // 旧設定ファイル（項目なし）は有効扱い
+    // true が明示的に保存されているときだけ有効。未保存・旧設定ファイル・不正値は無効
+    enabled: typeof o.enabled === "boolean" ? o.enabled : D.enabled,
     engine: ENGINES.includes(o.engine as Engine) ? (o.engine as Engine) : D.engine,
     ollamaUrl: str(o.ollamaUrl, D.ollamaUrl),
     ollamaModel: str(o.ollamaModel, D.ollamaModel),
