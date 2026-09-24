@@ -35,7 +35,7 @@ export function PromptEditorPage() {
   const picks = usePromptStore((s) => s.picks);
   const filePath = usePromptStore((s) => s.filePath);
   const isDirty = usePromptStore(selectIsDirty);
-  const { addSet, moveSet, setFormatMode, setGlobalFormat, rerollAll, resetDoc } =
+  const { addSet, moveSet, setFormatMode, setGlobalFormat, resetDoc } =
     usePromptStore.getState(); // アクションは不変なので getState で取得
 
   const translationOn = useTranslationEnabled();
@@ -146,14 +146,6 @@ export function PromptEditorPage() {
         <div className="spacer" />
         {/* 「全セット 日→英」と「↶ 元に戻す」（翻訳機能が有効なときだけ） */}
         {translationOn && <BulkTranslateBar sets={doc.sets} />}
-        {/* <button
-          type="button"
-          onClick={rerollAll}
-          disabled={translating}
-          title={translating ? busyTitle : "すべての [A / B] を再抽選"}
-        >
-          🎲 全体再抽選
-        </button> */}
       </div>
 
       <div className="toolbar toolbar--format">
