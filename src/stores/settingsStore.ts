@@ -1,5 +1,6 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { create } from "zustand";
+import { DEFAULT_HEADING_MODE, type HeadingMode, sanitizeHeadingMode } from "../lib/headingMode";
 import { DEFAULT_LANG_VIEW, type LangView, sanitizeLangView } from "../lib/langView";
 
 export type Settings = {
@@ -12,6 +13,8 @@ export type Settings = {
   suggestFillOther: boolean;
   /** プロンプト作成タブで表示する言語の列 */
   langView: LangView;
+  /** プロンプト作成タブの見出しの扱い（表示して出力／表示のみ／非表示） */
+  headingMode: HeadingMode;
 };
 
 const DEFAULTS: Settings = {
@@ -20,6 +23,7 @@ const DEFAULTS: Settings = {
   suggest: true,
   suggestFillOther: true,
   langView: DEFAULT_LANG_VIEW,
+  headingMode: DEFAULT_HEADING_MODE,
 };
 
 // %APPDATA%\<identifier>\settings.json に保存される
@@ -41,6 +45,7 @@ type SettingsState = Settings & {
   setSuggest: (v: boolean) => Promise<void>;
   setSuggestFillOther: (v: boolean) => Promise<void>;
   setLangView: (v: LangView) => Promise<void>;
+  setHeadingMode: (v: HeadingMode) => Promise<void>;
 };
 
 export const useSettingsStore = create<SettingsState>()((set) => ({
@@ -54,7 +59,8 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
     const suggest = (await store.get<boolean>("suggest")) ?? DEFAULTS.suggest;
     const suggestFillOther = (await store.get<boolean>("suggestFillOther")) ?? DEFAULTS.suggestFillOther;
     const langView = sanitizeLangView(await store.get("langView"));
-    set({ trimContent, promptDir, suggest, suggestFillOther, langView, loaded: true });
+    const headingMode = sanitizeHeadingMode(await store.get("headingMode"));
+    set({ trimContent, promptDir, suggest, suggestFillOther, langView, headingMode, loaded: true });
   },
   setTrimContent: async (v) => {
     set({ trimContent: v });
@@ -75,5 +81,9 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
   setLangView: async (v) => {
     set({ langView: v });
     await persist("langView", v);
+  },
+  setHeadingMode: async (v) => {
+    set({ headingMode: v });
+    await persist("headingMode", v);
   },
 }));

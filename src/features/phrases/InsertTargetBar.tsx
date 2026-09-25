@@ -4,6 +4,8 @@ import { useInsertTargetStore } from "../../stores/insertTargetStore";
 import { usePromptStore } from "../../stores/promptStore";
 import type { Part } from "../../types";
 import { targetLabel } from "./insertPhrase";
+import { headingVisible } from "../../lib/headingMode";
+import { useSettingsStore } from "../../stores/settingsStore";
 
 const PARTS: readonly Part[] = ["heading", "content"];
 
@@ -21,7 +23,9 @@ export function InsertTargetBar() {
     return () => clearTimeout(t);
   }, [notice, setNotice]);
 
-  const resolved = resolveTarget(sets, target);
+  const allowHeading = useSettingsStore((s) => headingVisible(s.headingMode));
+  const parts: readonly Part[] = allowHeading ? PARTS : ["content"];
+  const resolved = resolveTarget(sets, target, { allowHeading });
   const value = resolved ? `${resolved.setId}:${resolved.part}` : "";
 
   return (
@@ -39,7 +43,7 @@ export function InsertTargetBar() {
         {sets.flatMap((s, i) => {
           const h = (s.heading.ja || s.heading.en).trim();
           const preview = h ? `（${h.length > 16 ? `${h.slice(0, 16)}…` : h}）` : "";
-          return PARTS.map((part) => (
+          return parts.map((part) => (
             <option key={`${s.id}:${part}`} value={`${s.id}:${part}`}>
               {targetLabel(i, part)}
               {preview}

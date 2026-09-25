@@ -4,6 +4,8 @@ import { isTranslateTarget, TRANSLATE_PARTS, type TranslatePart, useTranslateTar
 import { useTranslateUndoStore } from "../../stores/translateUndoStore";
 import type { PromptSet } from "../../types";
 import { setBusyKey, translateWithConfirm, useTranslateBusy } from "../translate/translateActions";
+import { headingVisible } from "../../lib/headingMode";
+import { useSettingsStore } from "../../stores/settingsStore";
 
 const PART_LABEL: Record<TranslatePart, string> = { heading: "見出し", content: "内容" };
 
@@ -14,7 +16,10 @@ export function SetTranslateButtons({ set, label }: { set: PromptSet; label: str
   const record = useTranslateUndoStore((s) => s.record);
   const myKey = setBusyKey(set.id);
 
-  const parts = TRANSLATE_PARTS.filter((p) => isTranslateTarget(off, set.id, p));
+  const showHeading = useSettingsStore((s) => headingVisible(s.headingMode));
+  const parts = TRANSLATE_PARTS.filter(
+    (p) => (p !== "heading" || showHeading) && isTranslateTarget(off, set.id, p), // 非表示の見出しは翻訳しない
+  );
   const hasSource = (l: TransLang) => parts.some((p) => set[p][l].trim() !== "");
   const title = (dir: string) => (parts.length === 0 ? "翻訳対象の欄がありません（行の「翻訳」をチェック）" : `翻訳対象の欄を${dir}に翻訳`);
 

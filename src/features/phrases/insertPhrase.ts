@@ -4,6 +4,8 @@ import { useInsertTargetStore } from "../../stores/insertTargetStore";
 import { usePromptStore } from "../../stores/promptStore";
 import type { Part } from "../../types";
 import { BULK_KEY, setBusyKey, useTranslateBusy } from "../translate/translateActions";
+import { headingVisible } from "../../lib/headingMode";
+import { useSettingsStore } from "../../stores/settingsStore";
 
 export const targetLabel = (index: number, part: Part): string =>
   `#${index + 1} ${part === "heading" ? "見出し" : "内容"}`;
@@ -13,7 +15,9 @@ export function insertPhraseIntoPrompt(p: Pick<Phrase, "ja" | "en">): void {
   if (usePromptStore.getState().doc.sets.length === 0) usePromptStore.getState().addSet();
   const sets = usePromptStore.getState().doc.sets;
   const { target, setTarget, setNotice } = useInsertTargetStore.getState();
-  const t = resolveTarget(sets, target);
+  const t = resolveTarget(sets, target, {
+    allowHeading: headingVisible(useSettingsStore.getState().headingMode),
+  });
   if (!t) return;
   const label = targetLabel(t.index, t.part);
 

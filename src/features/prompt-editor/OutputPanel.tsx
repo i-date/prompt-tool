@@ -5,6 +5,7 @@ import { buildPrompt } from "../../lib/prompt-builder";
 import { usePromptStore } from "../../stores/promptStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import type { Picks, PromptDoc } from "../../types";
+import { headingOutput } from "../../lib/headingMode";
 
 type Props = {
   doc: PromptDoc;
@@ -18,8 +19,9 @@ export function OutputPanel({ doc, picks, translating }: Props) {
   const langView = useSettingsStore((s) => s.langView);
   const langs = visibleLangs(langView);
   const rerollAll = usePromptStore((s) => s.rerollAll);
-  const ja = useMemo(() => buildPrompt(doc, picks, "ja", { trimContent }), [doc, picks, trimContent]);
-  const en = useMemo(() => buildPrompt(doc, picks, "en", { trimContent }), [doc, picks, trimContent]);
+    const headings = useSettingsStore((s) => headingOutput(s.headingMode));
+  const ja = useMemo(() => buildPrompt(doc, picks, "ja", { trimContent, headings }), [doc, picks, trimContent, headings]);
+  const en = useMemo(() => buildPrompt(doc, picks, "en", { trimContent, headings }), [doc, picks, trimContent, headings]);
   const texts = { ja, en };
 
   // 表示中の欄を「行数の多いほう + 1 行」の同じ高さにそろえる

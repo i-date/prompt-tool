@@ -5,6 +5,8 @@ import { isTranslateTarget, TRANSLATE_PARTS, type TranslatePart, useTranslateTar
 import { useTranslateUndoStore } from "../../stores/translateUndoStore";
 import type { PromptSet } from "../../types";
 import { BULK_KEY, translateWithConfirm, useTranslateBusy } from "../translate/translateActions";
+import { headingVisible } from "../../lib/headingMode";
+import { useSettingsStore } from "../../stores/settingsStore";
 
 const PART_LABEL: Record<TranslatePart, string> = { heading: "見出し", content: "内容" };
 
@@ -16,9 +18,12 @@ export function BulkTranslateBar({ sets }: { sets: PromptSet[] }) {
   const undoEntries = useTranslateUndoStore((s) => s.entries);
   const record = useTranslateUndoStore((s) => s.record);
   const clearUndo = useTranslateUndoStore((s) => s.clear);
+  const showHeading = useSettingsStore((s) => headingVisible(s.headingMode));
+  const parts = TRANSLATE_PARTS.filter((p) => p !== "heading" || showHeading); // 非表示の見出しは翻訳しない
+
 
   const targets = sets.flatMap((set, i) =>
-    TRANSLATE_PARTS.filter((p) => isTranslateTarget(off, set.id, p)).map((part) => ({
+    parts.filter((p) => isTranslateTarget(off, set.id, p)).map((part) => ({
       set,
       part,
       label: `#${i + 1} ${PART_LABEL[part]}`,

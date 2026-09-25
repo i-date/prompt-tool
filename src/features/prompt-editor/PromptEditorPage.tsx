@@ -28,6 +28,7 @@ import { OutputPanel } from "./OutputPanel";
 import { SetRow } from "./SetRow";
 import { useSaveShortcuts } from "./useSaveShortcuts";
 import { InfoTip } from "../../components/InfoTip";
+import { HEADING_MODES, type HeadingMode, headingOutput } from "../../lib/headingMode";
 
 /** プロンプト作成画面の翻訳（一括 or セット単位）が実行中か。フレーズ管理の翻訳は含めない */
 const isPromptTranslating = (key: string | null): boolean =>
@@ -44,6 +45,9 @@ export function PromptEditorPage() {
   const langView = useSettingsStore((s) => s.langView);
   const setLangView = useSettingsStore((s) => s.setLangView);
   const langs = visibleLangs(langView);
+  const headingMode = useSettingsStore((s) => s.headingMode);
+  const setHeadingMode = useSettingsStore((s) => s.setHeadingMode);
+  const outHeading = headingOutput(headingMode);
 
   const translationOn = useTranslationEnabled();
   const translating = useTranslateBusy((s) => isPromptTranslating(s.key));
@@ -180,6 +184,16 @@ export function PromptEditorPage() {
               ))}
             </select>
           </label>
+          <label className="bar-field" title="全セットの見出しの扱い（入力済みの見出しは消えません）">
+            <span className="bar-label">見出し</span>
+            <select value={headingMode} onChange={(e) => void setHeadingMode(e.target.value as HeadingMode)}>
+              {HEADING_MODES.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <span className="bar-sep" aria-hidden="true" />
           <label className="bar-field">
             <span className="bar-label">書式</span>
@@ -198,10 +212,11 @@ export function PromptEditorPage() {
               <option value="comma">カンマ</option>
             </select>
           </label>
-          <label className="check">
+          <label className="check" title={outHeading ? undefined : "見出しを出力しない設定のため無効です"}>
             <input
               type="checkbox"
               checked={doc.format.blankAfterHeading}
+              disabled={!outHeading}
               onChange={(e) => setGlobalFormat({ blankAfterHeading: e.target.checked })}
             />
             {prefix}見出し後に空行
