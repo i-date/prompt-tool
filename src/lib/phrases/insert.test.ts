@@ -43,4 +43,11 @@ describe("resolveTarget", () => {
     expect(resolveTarget(sets, null)?.setId).toBe("b");
     expect(resolveTarget([], null)).toBeNull();
   });
+  it("allowHeading: false なら見出しの指定は同じセットの内容になる", () => {
+    expect(resolveTarget(sets, { setId: "a", part: "heading" }, { allowHeading: false })).toEqual({
+      setId: "a",
+      part: "content",
+      index: 0,
+    });
+  });
 });

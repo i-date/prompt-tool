@@ -491,3 +491,9 @@ textarea.autosize {
   opacity: 1; visibility: visible; transform: translate(var(--tip-x), 0);
 }
 .field-row__head-label { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ===== 見出し：表示のみ（出力しない）の行 ===== */
+.field-row.is-muted input[type="text"] { opacity: 0.55; }
+.field-row.is-muted .field-row__label { color: var(--muted); }
+/* 操作パネルで無効になったチェック項目 */
+.editor-bar .check:has(input:disabled) { color: var(--muted); cursor: not-allowed; }

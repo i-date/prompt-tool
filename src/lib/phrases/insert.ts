@@ -27,12 +27,19 @@ export function appendPhrase(current: string, phrase: string): { value: string; 
 export type InsertTarget = { setId: string; part: Part };
 export type ResolvedTarget = InsertTarget & { index: number };
 
-/** 挿入先を決める。指定が無い・セットが削除済みなら最後のセットの「内容」 */
-export function resolveTarget(sets: readonly PromptSet[], target: InsertTarget | null): ResolvedTarget | null {
+/**
+ * 挿入先を決める。指定が無い・セットが削除済みなら最後のセットの「内容」。
+ * allowHeading が false（見出し非表示）のとき、見出しの指定は同じセットの「内容」に読み替える
+ */
+export function resolveTarget(
+  sets: readonly PromptSet[],
+  target: InsertTarget | null,
+  { allowHeading = true }: { allowHeading?: boolean } = {},
+): ResolvedTarget | null {
   if (sets.length === 0) return null;
   if (target) {
     const i = sets.findIndex((s) => s.id === target.setId);
-    if (i >= 0) return { ...target, index: i };
+    if (i >= 0) return { setId: target.setId, part: allowHeading ? target.part : "content", index: i };
   }
   const i = sets.length - 1;
   return { setId: sets[i].id, part: "content", index: i };

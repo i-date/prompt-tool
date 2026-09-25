@@ -1,7 +1,11 @@
 import { applyPicks } from "../random-syntax";
 import type { FormatOptions, Lang, Picks, PromptDoc, PromptSet } from "../../types";
 
-export type BuildOptions = { trimContent: boolean };
+export type BuildOptions = {
+  trimContent: boolean;
+  /** false のとき見出しを出力しない（既定 true） */
+  headings?: boolean;
+};
 
 type Block = { heading: string; content: string; fmt: FormatOptions };
 
@@ -37,10 +41,11 @@ export function buildPrompt(
   lang: Lang,
   opts: BuildOptions = { trimContent: true },
 ): string {
+  const useHeadings = opts.headings ?? true;
   const blocks: Block[] = [];
 
   for (const set of doc.sets) {
-    const heading = set.heading.output ? set.heading[lang].trim() : "";
+    const heading = useHeadings && set.heading.output ? set.heading[lang].trim() : "";
     const raw = set.content.output
       ? applyPicks(set.content[lang], picks[set.id]?.[lang] ?? [])
       : "";

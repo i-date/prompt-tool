@@ -110,3 +110,23 @@ describe("buildPrompt：トリム", () => {
     expect(buildPrompt(d, {}, "en", { trimContent: false })).toBe("b");
   });
 });
+
+describe("buildPrompt：見出しを使わない（headings: false）", () => {
+  const off = { trimContent: true, headings: false };
+  it("見出しを出さず、内容を区切り設定でつなぐ", () => {
+    const d = doc([mk("1", "Subject", "girl"), mk("2", "BG", "room")]);
+    expect(buildPrompt(d, {}, "en", off)).toBe("girl, room");
+  });
+  it("見出しだけのセットはスキップする", () => {
+    const d = doc([mk("1", "Subject", ""), mk("2", "", "smile")]);
+    expect(buildPrompt(d, {}, "en", off)).toBe("smile");
+  });
+  it("見出し後の空行も入らない", () => {
+    const d = doc([mk("1", "Subject", "girl")], { blankAfterHeading: true });
+    expect(buildPrompt(d, {}, "en", off)).toBe("girl");
+  });
+  it("指定しなければ従来どおり見出しを出す", () => {
+    const d = doc([mk("1", "Subject", "girl")]);
+    expect(buildPrompt(d, {}, "en", { trimContent: true })).toBe("Subject\ngirl");
+  });
+});

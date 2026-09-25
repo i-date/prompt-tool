@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { SuggestField } from "../../components/SuggestField";
 import { useAutoResize } from "../../components/useAutoResize";
 import { confirmDialog } from "../../lib/confirm";
+import { headingOutput, headingVisible } from "../../lib/headingMode";
 import { visibleLangs } from "../../lib/langView";
 import { appendPhrase } from "../../lib/phrases/insert";
 import type { SuggestItem } from "../../lib/phrases/suggest";
@@ -36,6 +37,9 @@ const SEPS: readonly Choice<Separator>[] = [
 
 export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
   const translationOn = useTranslationEnabled();
+  const headingMode = useSettingsStore((s) => s.headingMode);
+  const showHeading = headingVisible(headingMode);
+  const outHeading = headingOutput(headingMode);
   const busyKey = useTranslateBusy((s) => s.key);
   const locked = busyKey === BULK_KEY || busyKey === setBusyKey(set.id); // 翻訳中は読み取り専用
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
@@ -79,15 +83,18 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
         </button>
       </div>
 
-      {perSet && (
+      {perSet && (outHeading || !isLast) && (
         <div className="set-row__format">
-          <Override
-            label="見出し後の空行"
-            value={set.format?.blankAfterHeading}
-            inherited={globalFormat.blankAfterHeading}
-            choices={ON_OFF}
-            onChange={(v) => setSetFormat(set.id, "blankAfterHeading", v)}
-          />
+          {/* 見出しを出力しない設定のときは「見出し後の空行」は意味がないので出さない */}
+          {outHeading && (
+            <Override
+              label="見出し後の空行"
+              value={set.format?.blankAfterHeading}
+              inherited={globalFormat.blankAfterHeading}
+              choices={ON_OFF}
+              onChange={(v) => setSetFormat(set.id, "blankAfterHeading", v)}
+            />
+          )}
           {!isLast && (
             <>
               <Override
@@ -109,7 +116,17 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
         </div>
       )}
 
-      <FieldRow setId={set.id} part="heading" label="見出し" field={set.heading} locked={locked} showTranslate={translationOn} />
+      {showHeading && (
+        <FieldRow
+          setId={set.id}
+          part="heading"
+          label="見出し"
+          field={set.heading}
+          locked={locked}
+          showTranslate={translationOn}
+          muted={!outHeading}
+        />
+      )}
       <FieldRow setId={set.id} part="content" label="内容" field={set.content} locked={locked} showTranslate={translationOn} multiline />
     </section>
   );
@@ -155,12 +172,14 @@ type FieldRowProps = {
   locked: boolean;
   /** 「翻訳」チェックを表示するか（翻訳機能が無効なら false） */
   showTranslate: boolean;
+  /** 出力しない設定の行（灰色表示・出力チェックは操作不可。入力はできる） */
+  muted?: boolean;
   multiline?: boolean;
 };
 
 type InputEl = HTMLInputElement | HTMLTextAreaElement;
 
-function FieldRow({ setId, part, label, field, locked, showTranslate, multiline }: FieldRowProps) {
+function FieldRow({ setId, part, label, field, locked, showTranslate, muted = false, multiline }: FieldRowProps) {
   const updateText = usePromptStore((s) => s.updateText);
   const toggleOutput = usePromptStore((s) => s.toggleOutput);
   const translateOn = useTranslateTargetStore((s) => isTranslateTarget(s.off, setId, part));
@@ -202,11 +221,23 @@ function FieldRow({ setId, part, label, field, locked, showTranslate, multiline 
     />
   );
 
+  const cls = ["field-row", langs.length === 1 && "field-row--single", locked && "is-locked", muted && "is-muted"]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`field-row${langs.length === 1 ? " field-row--single" : ""}${locked ? " is-locked" : ""}`}>
+    <div className={cls}>
       <div className="field-row__checks">
-        <label className="field-row__label" title="最終プロンプトに出力する">
-          <input type="checkbox" checked={field.output} onChange={() => toggleOutput(setId, part)} disabled={locked} />
+        <label
+          className="field-row__label"
+          title={muted ? "操作エリアの「見出し」が「表示のみ（出力しない）」のため出力されません" : "最終プロンプトに出力する"}
+        >
+          <input
+            type="checkbox"
+            checked={field.output}
+            onChange={() => toggleOutput(setId, part)}
+            disabled={locked || muted}
+          />
           {label}
         </label>
         {showTranslate && (
