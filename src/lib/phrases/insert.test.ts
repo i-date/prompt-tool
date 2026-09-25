@@ -51,3 +51,12 @@ describe("resolveTarget", () => {
     });
   });
 });
+
+describe("containsPhrase と !（除外記法）", () => {
+  it("ランダムグループ内の「選択肢!相手」も語句として判定する", () => {
+    expect(containsPhrase("[red eyes / blue eyes!blonde hair]", "blue eyes")).toBe(true);
+  });
+  it("グループの外の ! を含む語句も判定できる", () => {
+    expect(containsPhrase("wow!, smile", "wow!")).toBe(true);
+  });
+});

@@ -1,3 +1,4 @@
+import { escapeBang, type ParsedOption, parseOption } from "../random-syntax";
 export type Marker = "xml" | "html" | "brace";
 export type TargetLang = "ja" | "en";
 export type Piece = { kind: "text"; value: string } | { kind: "group"; options: string[] };
@@ -109,6 +110,34 @@ export function joinTokens(tokens: Token[], spaced: boolean): string {
   return out;
 }
 
+/**
+ * 翻訳後のグループを組み立てる。!相手 は訳さず、相手の選択肢の訳文に置き換える。
+ * 訳文に含まれる ! は \! にして、否定の記号と区別する
+ */
+function translatedGroups(
+  parsed: ParsedOption[][],
+  refs: (number | null)[][],
+  res: (ref: number) => string,
+): string[] {
+  const tr = parsed.map((opts, gi) => opts.map((_, oi) => {
+    const r = refs[gi][oi];
+    return r === null ? "" : res(r);
+  }));
+  const dict = new Map<string, string>();
+  parsed.forEach((opts, gi) =>
+    opts.forEach((o, oi) => {
+      if (o.text !== "" && !dict.has(o.text)) dict.set(o.text, tr[gi][oi]);
+    }),
+  );
+  return parsed.map((opts, gi) =>
+    formatGroup(
+      opts.map((o, oi) =>
+        [escapeBang(tr[gi][oi]), ...o.excludes.map((x) => escapeBang(dict.get(x) ?? x))].join("!"),
+      ),
+    ),
+  );
+}
+
 class Batch {
   readonly items: string[] = [];
   private readonly index = new Map<string, number>();
@@ -137,6 +166,7 @@ type SyntaxJob = {
   lead: string;
   trail: string;
   pieces: Piece[];
+  parsed: ParsedOption[][];
   optionRefs: (number | null)[][];
   templateRef: number | null;
   hasLiteral: boolean;
@@ -164,9 +194,9 @@ export async function translatePreservingSyntax(
     const lead = raw.slice(0, raw.length - raw.trimStart().length);
     const trail = raw.slice(raw.trimEnd().length);
     const pieces = splitSyntax(core);
-    const groups = pieces.flatMap((p) => (p.kind === "group" ? [p.options] : []));
-    if (groups.length === 0) return { kind: "plain", lead, trail, ref: first.add(codec.enc(core)) };
-    const optionRefs = groups.map((opts) => opts.map((o) => (o === "" ? null : first.add(codec.enc(o)))));
+    const parsed = pieces.flatMap((p) => (p.kind === "group" ? [p.options.map(parseOption)] : []));
+    if (parsed.length === 0) return { kind: "plain", lead, trail, ref: first.add(codec.enc(core)) };
+    const optionRefs = parsed.map((opts) => opts.map((o) => (o.text === "" ? null : first.add(codec.enc(o.text)))));
     const literals = pieces.flatMap((p) => (p.kind === "text" ? [p.value] : []));
     const hasLiteral = literals.some((v) => v.trim() !== "");
     let templateRef: number | null = null;
@@ -174,7 +204,7 @@ export async function translatePreservingSyntax(
       let k = 0;
       templateRef = first.add(pieces.map((p) => (p.kind === "text" ? codec.enc(p.value) : codec.placeholder(k++))).join(""));
     }
-    return { kind: "syntax", lead, trail, pieces, optionRefs, templateRef, hasLiteral };
+    return { kind: "syntax", lead, trail, pieces, parsed, optionRefs, templateRef, hasLiteral };
   });
 
   const r1 = await runBatch(fn, first.items);
@@ -192,7 +222,7 @@ export async function translatePreservingSyntax(
       results[i] = job.lead + res1(job.ref) + job.trail;
       return;
     }
-    const groups = job.optionRefs.map((refs) => formatGroup(refs.map((r) => (r === null ? "" : res1(r)))));
+    const groups = translatedGroups(job.parsed, job.optionRefs, res1);
     if (!job.hasLiteral) {
       let k = 0;
       const tokens = job.pieces.map((p): Token =>
