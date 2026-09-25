@@ -1,6 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+import { InfoTip } from "../../components/InfoTip";
+import { exclusionWarnings } from "../../lib/random-syntax";
 import { SuggestField } from "../../components/SuggestField";
 import { useAutoResize } from "../../components/useAutoResize";
 import { confirmDialog } from "../../lib/confirm";
@@ -47,6 +49,10 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
   const removeSet = usePromptStore((s) => s.removeSet);
   const rerollSet = usePromptStore((s) => s.rerollSet);
   const setSetFormat = usePromptStore((s) => s.setSetFormat);
+  const warnings = useMemo(
+    () => exclusionWarnings(set.content.ja, set.content.en),
+    [set.content.ja, set.content.en],
+  );
 
   const handleRemove = async () => {
     const isEmpty = [set.heading.ja, set.heading.en, set.content.ja, set.content.en].every((v) => !v);
@@ -74,6 +80,13 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
         </button>
         <span className="set-row__no">#{index + 1}</span>
         {translationOn && <SetTranslateButtons set={set} label={`#${index + 1}`} />}
+        {warnings.length > 0 && (
+          <InfoTip tone="warn" align="start" label={`#${index + 1} の記法の注意`}>
+            {warnings.map((w) => (
+              <span key={w} className="info-tip__line">{w}</span>
+            ))}
+          </InfoTip>
+        )}
         <div className="spacer" />
         <button type="button" onClick={() => rerollSet(set.id)} title="このセットを再抽選">
           🎲

@@ -497,3 +497,9 @@ textarea.autosize {
 .field-row.is-muted .field-row__label { color: var(--muted); }
 /* 操作パネルで無効になったチェック項目 */
 .editor-bar .check:has(input:disabled) { color: var(--muted); cursor: not-allowed; }
+
+/* ===== ⚠（記法の注意） ===== */
+.info-tip--warn .info-tip__icon,
+.info-tip--warn .info-tip__icon:hover { color: var(--warn); }
+.info-tip__line { display: block; }
+.info-tip__line + .info-tip__line { margin-top: 4px; }

@@ -1,14 +1,27 @@
 import type { Part, PromptSet } from "../../types";
 import { norm } from "./text";
+import { parseGroups } from "../random-syntax";
 
 /** 語句の区切り（[A / B] 記法の記号も含む） */
 const SPLIT = /[,，、。;；\n[\]\/|()（）]/;
 
-/** 欄の中に同じ語句（区切り単位・表記ゆれは正規化）が既にあるか */
+/** ランダムグループ内の ! を区切りに、\! を ! に置き換えた文字列 */
+function bangAsDelimiter(text: string): string {
+  let out = "";
+  let cur = 0;
+  for (const g of parseGroups(text)) {
+    out += text.slice(cur, g.start) + text.slice(g.start, g.end).replace(/\\?!/g, (m) => (m === "!" ? "," : "!"));
+    cur = g.end;
+  }
+  return out + text.slice(cur);
+}
+
+/** 欄の中に同じ語句（区切り単位・表記ゆれは正規化）が既にあるか。「選択肢!相手」も分けて見る */
 export function containsPhrase(text: string, phrase: string): boolean {
   const key = norm(phrase);
   if (key === "") return false;
-  return text.split(SPLIT).some((t) => norm(t) === key);
+  const has = (t: string) => t.split(SPLIT).some((x) => norm(x) === key);
+  return has(text) || has(bangAsDelimiter(text));
 }
 
 /** 欄の末尾に語句を追加する（既にあれば変更しない） */

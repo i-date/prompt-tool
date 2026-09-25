@@ -36,10 +36,22 @@ export function buildPool(data: PhraseData): PoolEntry[] {
     }));
 }
 
+/** pos がランダムグループ（/ を含む [..]、入力途中で閉じていないものも含む）の中か */
+function inRandomGroup(value: string, pos: number): boolean {
+  const open = value.lastIndexOf("[", pos - 1);
+  if (open < 0 || value.lastIndexOf("]", pos - 1) > open) return false;
+  const close = value.indexOf("]", pos);
+  const nextOpen = value.indexOf("[", pos);
+  const end = close < 0 || (nextOpen >= 0 && nextOpen < close) ? value.length : close;
+  return value.slice(open + 1, end).includes("/");
+}
+
 /** カーソル位置で入力中の語句の範囲（直前の区切り〜カーソル、先頭の空白は除く） */
 export function tokenAt(value: string, caret: number): { start: number; end: number } | null {
+  const bang = inRandomGroup(value, caret); // グループ内では「!相手」の ! も区切り（\! は除く）
+  const isDelim = (i: number) => DELIM.test(value[i]) || (bang && value[i] === "!" && value[i - 1] !== "\\");
   let s = caret;
-  while (s > 0 && !DELIM.test(value[s - 1])) s--;
+  while (s > 0 && !isDelim(s - 1)) s--;
   while (s < caret && isSpace(value[s])) s++;
   return s < caret ? { start: s, end: caret } : null;
 }
