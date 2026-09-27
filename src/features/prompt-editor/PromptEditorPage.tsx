@@ -28,6 +28,7 @@ import { OutputPanel } from "./OutputPanel";
 import { SetRow } from "./SetRow";
 import { useSaveShortcuts } from "./useSaveShortcuts";
 import { InfoTip } from "../../components/InfoTip";
+import { Toaster } from "../../components/Toaster";
 import { HEADING_MODES, type HeadingMode, headingOutput } from "../../lib/headingMode";
 
 /** プロンプト作成画面の翻訳（一括 or セット単位）が実行中か。フレーズ管理の翻訳は含めない */
@@ -269,6 +270,7 @@ export function PromptEditorPage() {
       <button type="button" className="add-set" onClick={addSet}>＋ セットを追加</button>
 
       <OutputPanel doc={doc} picks={picks} translating={translating} />
+      <Toaster />
     </div>
   );
 }
