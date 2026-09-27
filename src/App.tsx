@@ -9,10 +9,12 @@ import { useCloseGuard } from "./hooks/useCloseGuard";
 import { useSettingsStore } from "./stores/settingsStore";
 import { useTranslationSettingsStore } from "./stores/translationSettingsStore";
 import type { TabKey } from "./types";
+import { useApplyTheme } from "./hooks/useApplyTheme";
 
 function App() {
   const [tab, setTab] = useState<TabKey>("prompt");
   useCloseGuard();
+  useApplyTheme();
 
   useEffect(() => {
     useSettingsStore
