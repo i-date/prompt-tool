@@ -4,13 +4,16 @@ import { showError } from "../../lib/confirm";
 import { resolvePromptDir } from "../../lib/files";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { TranslationSettings } from "./TranslationSettings";
+import { THEME_MODES } from "../../lib/theme";
 
 export function SettingsPage() {
   const trimContent = useSettingsStore((s) => s.trimContent);
   const promptDir = useSettingsStore((s) => s.promptDir);
   const suggest = useSettingsStore((s) => s.suggest);
   const suggestFillOther = useSettingsStore((s) => s.suggestFillOther);
-  const { setTrimContent, setPromptDir, setSuggest, setSuggestFillOther } = useSettingsStore.getState();
+  const themeMode = useSettingsStore((s) => s.themeMode);
+  const { setTrimContent, setPromptDir, setSuggest, setSuggestFillOther, setThemeMode } =
+    useSettingsStore.getState();
   const [resolved, setResolved] = useState("");
 
   useEffect(() => {
@@ -41,6 +44,26 @@ export function SettingsPage() {
 
   return (
     <div className="settings">
+      <section className="panel">
+        <h2>外観</h2>
+        <div className="theme-options" role="radiogroup" aria-label="カラーモード">
+          {THEME_MODES.map((o) => (
+            <label key={o.value} className="theme-option">
+              <input
+                type="radio"
+                name="themeMode"
+                value={o.value}
+                checked={themeMode === o.value}
+                onChange={() => void setThemeMode(o.value)}
+              />
+              {o.label}
+            </label>
+          ))}
+        </div>
+        <p className="hint hint--flush">
+          「システム設定」では、Windows の「アプリ モードを選ぶ」（ライト／ダーク）に合わせて自動で切り替わります。
+        </p>
+      </section>
       <section className="panel">
         <h2>保存先フォルダ</h2>
         <div className="dir-row">

@@ -8,6 +8,7 @@
     "core:window:allow-destroy",
     "opener:default",
     "dialog:default",
-    "store:default"
+    "store:default",
+    "core:window:allow-set-theme"
   ]
 }
