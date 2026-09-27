@@ -13,6 +13,7 @@ import type { SuggestItem } from "../../lib/phrases/suggest";
 import { useInsertTargetStore } from "../../stores/insertTargetStore";
 import { usePromptStore } from "../../stores/promptStore";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { showToast } from "../../stores/toastStore";
 import { isTranslateTarget, useTranslateTargetStore } from "../../stores/translateTargetStore";
 import { useTranslationEnabled } from "../../stores/translationSettingsStore";
 import type { Field, FormatOptions, Lang, Part, PromptSet, Separator } from "../../types";
@@ -88,7 +89,7 @@ export function SetRow({ set, index, isLast, perSet, globalFormat }: Props) {
           </InfoTip>
         )}
         <div className="spacer" />
-        <button type="button" onClick={() => rerollSet(set.id)} title="このセットを再抽選">
+        <button type="button" onClick={() => {rerollSet(set.id); showToast("再抽選しました");}} title="このセットを再抽選">
           🎲
         </button>
         <button type="button" className="danger" onClick={handleRemove} disabled={locked}>

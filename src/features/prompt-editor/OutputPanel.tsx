@@ -1,11 +1,12 @@
 import { type Ref, useMemo, useRef } from "react";
 import { useAutoResize } from "../../components/useAutoResize";
+import { headingOutput } from "../../lib/headingMode";
 import { LANG_LABEL, visibleLangs } from "../../lib/langView";
 import { buildPrompt } from "../../lib/prompt-builder";
 import { usePromptStore } from "../../stores/promptStore";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { showToast } from "../../stores/toastStore";
 import type { Picks, PromptDoc } from "../../types";
-import { headingOutput } from "../../lib/headingMode";
 
 type Props = {
   doc: PromptDoc;
@@ -19,7 +20,7 @@ export function OutputPanel({ doc, picks, translating }: Props) {
   const langView = useSettingsStore((s) => s.langView);
   const langs = visibleLangs(langView);
   const rerollAll = usePromptStore((s) => s.rerollAll);
-    const headings = useSettingsStore((s) => headingOutput(s.headingMode));
+  const headings = useSettingsStore((s) => headingOutput(s.headingMode));
   const ja = useMemo(() => buildPrompt(doc, picks, "ja", { trimContent, headings }), [doc, picks, trimContent, headings]);
   const en = useMemo(() => buildPrompt(doc, picks, "en", { trimContent, headings }), [doc, picks, trimContent, headings]);
   const texts = { ja, en };
@@ -30,6 +31,11 @@ export function OutputPanel({ doc, picks, translating }: Props) {
   const refs = { ja: jaRef, en: enRef };
   useAutoResize([jaRef, enRef], `${ja}\u0000${en}`, { layoutKey: langView });
 
+  const handleRerollAll = () => {
+    rerollAll();
+    showToast("再抽選しました");
+  };
+
   return (
     <section className="output">
       <div className="output__title">
@@ -37,7 +43,7 @@ export function OutputPanel({ doc, picks, translating }: Props) {
         {/* 各セットの 🎲 と同じデザイン */}
         <button
           type="button"
-          onClick={rerollAll}
+          onClick={handleRerollAll}
           disabled={translating}
           title={translating ? "翻訳中は操作できません" : "すべての [A / B] を再抽選"}
           aria-label="すべて再抽選"
@@ -57,11 +63,20 @@ export function OutputPanel({ doc, picks, translating }: Props) {
 type ColumnProps = { label: string; text: string; textareaRef: Ref<HTMLTextAreaElement> };
 
 function OutputColumn({ label, text, textareaRef }: ColumnProps) {
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("コピーしました");
+    } catch {
+      showToast("コピーできませんでした", "error");
+    }
+  };
+
   return (
     <div className="output__col">
       <div className="output__head">
         <span>{label}</span>
-        <button type="button" disabled={!text} onClick={() => navigator.clipboard.writeText(text)}>
+        <button type="button" disabled={!text} onClick={() => void handleCopy()}>
           コピー
         </button>
       </div>

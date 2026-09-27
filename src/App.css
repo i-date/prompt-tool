@@ -503,3 +503,27 @@ textarea.autosize {
 .info-tip--warn .info-tip__icon:hover { color: var(--warn); }
 .info-tip__line { display: block; }
 .info-tip__line + .info-tip__line { margin-top: 4px; }
+
+/* ===== 通知（画面右下のトースト） ===== */
+.toaster {
+  position: fixed; right: 16px; bottom: 16px; z-index: 100;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  pointer-events: none; /* 通知の周りは下の画面を操作できる */
+}
+.toast {
+  padding: 8px 14px;
+  background: var(--panel); color: var(--accent);
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 6px; box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
+  font-size: 13px; font-weight: 600;
+  pointer-events: auto; cursor: pointer; /* クリックですぐ消せる */
+  animation: toast-in 0.18s ease-out;
+}
+.toast--error { color: var(--danger); border-left-color: var(--danger); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
