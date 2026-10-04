@@ -22,11 +22,22 @@ const ensureMdExt = (p: string) => (/\.md$/i.test(p) ? p : `${p}.md`);
 
 const settingsDir = () => resolvePromptDir(useSettingsStore.getState().promptDir);
 
+/**
+ * 取り込み・保存の後で「保存先フォルダ」の設定が変わったか。
+ * true のあいだは、MD新規保存でも今のファイルのフォルダではなく設定のフォルダを開く。
+ */
+let promptDirChanged = false;
+useSettingsStore.subscribe((s, prev) => {
+  // 起動時の読み込み（init）での変化は対象外
+  if (prev.loaded && s.promptDir !== prev.promptDir) promptDirChanged = true;
+});
+
 /** 今のドキュメントを指定パスに書き込み、保存済みにする */
 async function writeDoc(path: string): Promise<void> {
   const text = serializeDoc(usePromptStore.getState().doc);
   await writeTextFile(path, text);
   usePromptStore.getState().markSaved(path, text);
+  promptDirChanged = false;
 }
 
 /**
@@ -69,6 +80,7 @@ export async function importPrompt(): Promise<void> {
     if (!path) return;
     const text = await readTextFile(path);
     usePromptStore.getState().loadDoc(parseDoc(text), path, text);
+    promptDirChanged = false;
   } catch (e) {
     await showError("取り込みに失敗しました", e);
   }
@@ -81,7 +93,10 @@ export async function importPrompt(): Promise<void> {
 export async function savePromptAs(): Promise<boolean> {
   try {
     const { filePath } = usePromptStore.getState();
-    const dir = filePath ? await resolvePromptDir(await dirname(filePath)) : await settingsDir();
+    const dir =
+      filePath && !promptDirChanged
+        ? await resolvePromptDir(await dirname(filePath))
+        : await settingsDir();
     const picked = await save({
       title: "MD新規保存",
       defaultPath: await join(dir, defaultFileName()),
